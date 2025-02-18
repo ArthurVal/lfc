@@ -1,5 +1,5 @@
 add_executable(${PROJECT_NAME}-tests
-  test_pd.cpp
+  test_pd_controller.cpp
 )
 
 target_link_libraries(${PROJECT_NAME}-tests
