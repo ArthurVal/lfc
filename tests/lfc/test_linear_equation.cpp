@@ -2,7 +2,8 @@
 
 #include "gtest/gtest.h"
 #include "lfc/linear_equation.hpp"
-#include "mocks/arithmetic.hpp"
+#include "tests/mocks/arithmetic.hpp"
+#include "tests/mocks/callable.hpp"
 
 namespace lfc {
 namespace {
@@ -84,6 +85,7 @@ TEST(TestLinearEquation, Make) {
     auto eq = MakeLinearEquation(1, 2);
     EXPECT_EQ(eq.Size(), 2);
 
+    EXPECT_EQ(AsTuple(eq), std::make_tuple(1, 2));
     EXPECT_EQ(eq.k<0>(), 1);
     EXPECT_EQ(eq.k<1>(), 2);
   }
@@ -231,6 +233,50 @@ TEST(TestLinearEquation, Forward) {
       std::is_same_v<decltype(ForwardAsLinearEquation(std::declval<int>(),
                                                       std::declval<char&&>())),
                      LinearEquation<int&&, char&&>>);
+}
+
+TEST(TestLinearEquation, ForEach) {
+  using testing::StrictMock;
+  using tests::CallableMock;
+
+  {
+    auto mock = StrictMock<CallableMock<void, int>>{};
+    using testing::Return;
+    EXPECT_CALL(mock, Call(1))
+        .Times(4)
+        .WillRepeatedly(Return())
+        .RetiresOnSaturation();
+    ForEachCoeffsOf(ForwardAsLinearEquation(1, 1, 1, 1), mock);
+  }
+
+  {
+    auto mock = StrictMock<CallableMock<void, const char*>>{};
+    using testing::Return;
+
+    EXPECT_CALL(mock, Call("Coucou"))
+        .Times(1)
+        .WillRepeatedly(Return())
+        .RetiresOnSaturation();
+
+    ForEachCoeffsOf(ForwardAsLinearEquation(1, 1, "Coucou", 1), mock);
+  }
+
+  {
+    auto mock = StrictMock<CallableMock<void, const char*, std::size_t>>{};
+    using testing::Return;
+
+    EXPECT_CALL(mock, Call(std::make_tuple("a", 1ul)))
+        .Times(1)
+        .WillRepeatedly(Return())
+        .RetiresOnSaturation();
+
+    EXPECT_CALL(mock, Call(std::make_tuple("Coucou", 3ul)))
+        .Times(1)
+        .WillRepeatedly(Return())
+        .RetiresOnSaturation();
+
+    ForEachCoeffsOf(ForwardAsLinearEquation(1, "a", 1, "Coucou", 1), mock);
+  }
 }
 
 TEST(TestLinearEquation, Solve) {

@@ -8,7 +8,7 @@
 namespace lfc {
 
 /**
- * @brief Pseudo arithmetic object use to disable operator*() and forward
+ * @brief Pseudo arithmetic tag object use to disable operator*() and forward
  *        anything through operator+().
  *
  * Can be used either when:
@@ -31,14 +31,32 @@ constexpr auto operator*(T&&, Ignored) noexcept -> Ignored {
 }
 
 template <class T>
-constexpr auto operator+(Ignored, T&& v) noexcept -> decltype(auto) {
+constexpr auto operator+(Ignored, T&& v) noexcept -> T&& {
   return std::forward<T>(v);
 }
 
 template <class T>
-constexpr auto operator+(T&& v, Ignored) noexcept -> decltype(auto) {
+constexpr auto operator+(T&& v, Ignored) noexcept -> T&& {
   return std::forward<T>(v);
 }
+
+/// Forward declaration of LinearEquation for the meta function below
+template <class K0, class... Kn>
+struct LinearEquation;
+
+namespace details {
+
+/// Returns true when T is an instanciation of a LinearEquation
+template <class T>
+struct IsLinearEquation : std::false_type {};
+
+template <class... K>
+struct IsLinearEquation<LinearEquation<K...>> : std::true_type {};
+
+template <class T>
+constexpr bool IsLinearEquation_v = IsLinearEquation<T>::value;
+
+}  // namespace details
 
 // Generic LinearEquation, solving K0 + (Kn[0] * X0) + (Kn[1] * X1) + ...
 template <class K0, class... Kn>
@@ -55,44 +73,74 @@ struct LinearEquation {
   constexpr LinearEquation(_K0&& _k0, _Kn&&... _kn)
       : m_k0(std::forward<_K0>(_k0)), m_kn{std::forward<_Kn>(_kn)...} {}
 
+  /// Return a tuple of every coefficients of the given Equation
+  template <
+      class AnyEq,
+      std::enable_if_t<std::is_same_v<std::decay_t<AnyEq>, LinearEquation>,
+                       bool> = true>
+  friend constexpr auto AsTuple(AnyEq&& eq) noexcept {
+    return std::apply(
+        [&eq](auto&&... kn) {
+          return std::forward_as_tuple(std::forward<AnyEq>(eq).m_k0,
+                                       std::forward<decltype(kn)>(kn)...);
+        },
+        std::forward<AnyEq>(eq).m_kn);
+  }
+
   /// Access the Nth coefficient (lvalue)
   template <std::size_t N>
-  constexpr auto k() & -> auto& {
-    if constexpr (N == 0) {
-      return m_k0;
-    } else {
-      return std::get<N - 1>(m_kn);
-    }
+  constexpr auto k() & noexcept -> auto& {
+    return std::get<N>(AsTuple(*this));
   }
 
   /// Access the Nth coefficient (const lvalue)
   template <std::size_t N>
-  constexpr auto k() const& -> const auto& {
-    if constexpr (N == 0) {
-      return m_k0;
-    } else {
-      return std::get<N - 1>(m_kn);
-    }
+  constexpr auto k() const& noexcept -> const auto& {
+    return std::get<N>(AsTuple(*this));
   }
 
   /// Access the Nth coefficient (rvalue)
   template <std::size_t N>
-  constexpr auto k() && -> auto&& {
-    if constexpr (N == 0) {
-      return m_k0;
-    } else {
-      return std::get<N - 1>(m_kn);
-    }
+  constexpr auto k() && noexcept -> auto&& {
+    return std::get<N>(AsTuple(*this));
   }
 
   /// Access the Nth coefficient (const rvalue)
   template <std::size_t N>
-  constexpr auto k() const&& -> const auto&& {
-    if constexpr (N == 0) {
-      return m_k0;
-    } else {
-      return std::get<N - 1>(m_kn);
-    }
+  constexpr auto k() const&& noexcept -> const auto&& {
+    return std::get<N>(AsTuple(*this));
+  }
+
+  /**
+   *  @brief Iterate over all coefficients K of any LinearEquation eq
+   *
+   *  @param[in] eq LinearEquation we wish to iterates over
+   *  @param[in] op Functor called for each coefficients 'k' of type K, if
+   *                'op(k)' is defined. Additionally, if 'op(k, std::size_t)' is
+   *                defined, called it with the index of k as second argument.
+   */
+  template <
+      class AnyEq, class Op,
+      std::enable_if_t<std::is_same_v<std::decay_t<AnyEq>, LinearEquation>,
+                       bool> = true>
+  friend constexpr auto ForEachCoeffsOf(AnyEq&& eq, Op&& op) -> void {
+    constexpr auto DoCall = [](auto&& f, auto&& k, std::size_t i) {
+      if constexpr (std::is_invocable_v<decltype(f), decltype(k),
+                                        std::size_t>) {
+        f(std::forward<decltype(k)>(k), i);
+      } else if constexpr (std::is_invocable_v<decltype(f), decltype(k)>) {
+        f(std::forward<decltype(k)>(k));
+      } else {
+        // Type of k not handled
+      }
+    };
+
+    std::apply(
+        [&](auto&&... k) {
+          std::size_t i = 0;
+          (DoCall(op, std::forward<decltype(k)>(k), i++), ...);
+        },
+        AsTuple(std::forward<AnyEq>(eq)));
   }
 
   /// The size (number of K) of the LinearEquation
