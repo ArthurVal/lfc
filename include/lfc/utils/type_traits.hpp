@@ -1,9 +1,8 @@
 #pragma once
 
-#include <functional>   // std::reference_wrapper
 #include <type_traits>  // false_type
 
-namespace lfc::details {
+namespace lfc::utils::details {
 
 /// Always evaluates to false
 template <typename...>
@@ -28,18 +27,4 @@ struct RemoveCVRef {
 template <class T>
 using RemoveCVRef_t = typename RemoveCVRef<T>::type;
 
-/// Transforms std::reference_wrapper<T> to T&. Any other type is untouched.
-template <class T>
-struct UnwrapRefWrapper {
-  using type = T;
-};
-
-template <class T>
-struct UnwrapRefWrapper<std::reference_wrapper<T>> {
-  using type = T&;
-};
-
-template <class T>
-using UnwrapRefWrapper_t = typename UnwrapRefWrapper<T>::type;
-
-}  // namespace lfc::details
+}  // namespace lfc::utils::details

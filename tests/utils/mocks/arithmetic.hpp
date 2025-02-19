@@ -1,88 +1,93 @@
 #pragma once
 
-#include <type_traits>
+#include <ostream>
+#include <string_view>
 
 #include "gmock/gmock.h"
 
 namespace tests {
 
-template <class Arg, class R = void>
+// ArgSide //////////////////////////////////////////////////////////////////
+enum class ArgSide {
+  Left,
+  Right,
+};
+
+constexpr auto ToString(ArgSide side) noexcept -> std::string_view {
+  switch (side) {
+    case ArgSide::Left:
+      return "Left";
+    case ArgSide::Right:
+      return "Right";
+  }
+
+  return "";
+}
+
+inline auto operator<<(std::ostream& os, ArgSide side) -> std::ostream& {
+  os << ToString(side);
+  return os;
+}
+
+// Addition /////////////////////////////////////////////////////////////////
+template <class R, class Arg>
 struct AddMock {
-  MOCK_METHOD(R, Addition, (const Arg&), (const));
+  MOCK_METHOD(R, Addition, (Arg, ArgSide), (const));
 
-  friend constexpr auto operator+(const AddMock& mock, const Arg& v)
-      -> std::conditional_t<std::is_same_v<R, void>, const AddMock&, R> {
-    if constexpr (std::is_same_v<R, void>) {
-      mock.Addition(v);
-      return mock;
-    } else {
-      return mock.Addition(v);
-    }
+  friend constexpr auto operator+(const AddMock& mock, Arg value) -> R {
+    return mock.Addition(std::move(value), ArgSide::Right);
   }
 
-  friend constexpr auto operator+(const Arg& v, const AddMock& mock) {
-    return mock + v;
+  friend constexpr auto operator+(Arg value, const AddMock& mock) -> R {
+    return mock.Addition(std::move(value), ArgSide::Left);
   }
 };
 
-template <class Arg, class R = void>
+// Substraction /////////////////////////////////////////////////////////////
+template <class R, class Arg>
 struct SubMock {
-  MOCK_METHOD(R, Substraction, (const Arg&), (const));
-  friend constexpr auto operator-(const SubMock& mock, const Arg& v)
-      -> std::conditional_t<std::is_same_v<R, void>, const SubMock&, R> {
-    if constexpr (std::is_same_v<R, void>) {
-      mock.Substraction(v);
-      return mock;
-    } else {
-      return mock.Substraction(v);
-    }
+  MOCK_METHOD(R, Substraction, (Arg, ArgSide), (const));
+
+  friend constexpr auto operator-(const SubMock& mock, Arg value) -> R {
+    return mock.Substraction(std::move(value), ArgSide::Right);
   }
 
-  friend constexpr auto operator-(const Arg& v, const SubMock& mock) {
-    return mock - v;
+  friend constexpr auto operator-(Arg value, const SubMock& mock) -> R {
+    return mock.Substraction(std::move(value), ArgSide::Left);
   }
 };
 
-template <class Arg, class R = void>
+// Multiplication ///////////////////////////////////////////////////////////
+template <class R, class Arg>
 struct MulMock {
-  MOCK_METHOD(R, Multiplication, (const Arg&), (const));
-  friend constexpr auto operator*(const MulMock& mock, const Arg& v)
-      -> std::conditional_t<std::is_same_v<R, void>, const MulMock&, R> {
-    if constexpr (std::is_same_v<R, void>) {
-      mock.Multiplication(v);
-      return mock;
-    } else {
-      return mock.Multiplication(v);
-    }
+  MOCK_METHOD(R, Multiplication, (Arg, ArgSide), (const));
+
+  friend constexpr auto operator*(const MulMock& mock, Arg value) -> R {
+    return mock.Multiplication(std::move(value), ArgSide::Right);
   }
 
-  friend constexpr auto operator*(const Arg& v, const MulMock& mock) {
-    return mock * v;
+  friend constexpr auto operator*(Arg value, const MulMock& mock) -> R {
+    return mock.Multiplication(std::move(value), ArgSide::Left);
   }
 };
 
-template <class Arg, class R = void>
+// Division /////////////////////////////////////////////////////////////////
+template <class R, class Arg>
 struct DivMock {
-  MOCK_METHOD(R, Division, (const Arg&), (const));
-  friend constexpr auto operator/(const DivMock& mock, const Arg& v)
-      -> std::conditional_t<std::is_same_v<R, void>, const DivMock&, R> {
-    if constexpr (std::is_same_v<R, void>) {
-      mock.Division(v);
-      return mock;
-    } else {
-      return mock.Division(v);
-    }
+  MOCK_METHOD(R, Division, (Arg, ArgSide), (const));
+
+  friend constexpr auto operator/(const DivMock& mock, Arg value) -> R {
+    return mock.Division(std::move(value), ArgSide::Right);
   }
 
-  friend constexpr auto operator/(const Arg& v, const DivMock& mock) {
-    return mock / v;
+  friend constexpr auto operator/(Arg value, const DivMock& mock) -> R {
+    return mock.Division(std::move(value), ArgSide::Left);
   }
 };
-
-template <class Arg, class R = void>
-struct ArithmeticMock : AddMock<Arg, R>,
-                        SubMock<Arg, R>,
-                        MulMock<Arg, R>,
-                        DivMock<Arg, R> {};
+template <class R, class Arg>
+struct ArithmeticMock : AddMock<R, Arg>,
+                        SubMock<R, Arg>,
+                        MulMock<R, Arg>,
+                        DivMock<R, Arg> {};
 
 }  // namespace tests

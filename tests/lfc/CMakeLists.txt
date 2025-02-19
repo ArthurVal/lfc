@@ -1,5 +1,5 @@
 add_executable(${PROJECT_NAME}-tests
-  test_pd_controller.cpp
+  test_linear_equation.cpp
 )
 
 target_link_libraries(${PROJECT_NAME}-tests
