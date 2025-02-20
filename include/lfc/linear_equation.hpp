@@ -95,15 +95,13 @@ struct LinearEquation {
         "Not enought coefficients to solve this as a linear equation");
 
     if constexpr (MultiplyRight) {
-      return std::get<0>(kn) +
-             SolveImpl(std::make_index_sequence<sizeof...(X)>{},
-                       utils::SliceTuple<1>(utils::ForwardTuple(kn)),
-                       std::forward_as_tuple(std::forward<X>(x)...));
+      return k<0>() + SolveImpl(std::make_index_sequence<sizeof...(X)>{},
+                                utils::SliceTuple<1>(utils::ForwardTuple(kn)),
+                                std::forward_as_tuple(std::forward<X>(x)...));
     } else {
-      return std::get<0>(kn) +
-             SolveImpl(std::make_index_sequence<sizeof...(X)>{},
-                       std::forward_as_tuple(std::forward<X>(x)...),
-                       utils::SliceTuple<1>(utils::ForwardTuple(kn)));
+      return k<0>() + SolveImpl(std::make_index_sequence<sizeof...(X)>{},
+                                std::forward_as_tuple(std::forward<X>(x)...),
+                                utils::SliceTuple<1>(utils::ForwardTuple(kn)));
     }
   }
 
