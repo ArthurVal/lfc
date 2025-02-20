@@ -1,6 +1,5 @@
 #pragma once
 
-#include <functional>
 #include <tuple>
 
 #include "lfc/utils/interger_sequence.hpp"  // MakeIndexSequenceStartingAt
@@ -95,11 +94,14 @@ constexpr auto TransformTuplesImpl(std::index_sequence<I...>, LhsTpl&& lhs,
 
 template <class LhsTpl, class RhsTpl, class BinaryOp>
 constexpr auto TransformTuples(LhsTpl&& lhs, RhsTpl&& rhs, BinaryOp&& f) {
-  constexpr auto Size = std::min(std::tuple_size_v<std::decay_t<LhsTpl>>,
-                                 std::tuple_size_v<std::decay_t<RhsTpl>>);
+  constexpr auto LhsSize = std::tuple_size_v<std::decay_t<LhsTpl>>;
+  constexpr auto RhsSize = std::tuple_size_v<std::decay_t<RhsTpl>>;
+
+  // Take the min size
+  constexpr auto MinSize = LhsSize < RhsSize ? LhsSize : RhsSize;
 
   return details::TransformTuplesImpl(
-      std::make_index_sequence<Size>{}, std::forward<LhsTpl>(lhs),
+      std::make_index_sequence<MinSize>{}, std::forward<LhsTpl>(lhs),
       std::forward<RhsTpl>(rhs), std::forward<BinaryOp>(f));
 }
 
