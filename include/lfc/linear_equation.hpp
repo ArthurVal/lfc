@@ -73,11 +73,12 @@ struct LinearEquation {
   ~LinearEquation() = default;
 
   /// Construct by forwarding coeffs
-  template <class... _Kn>
-  constexpr LinearEquation(_Kn&&... _kn) : kn{std::forward<_Kn>(_kn)...} {}
+  template <class... T>
+  constexpr LinearEquation(T&&... values) : kn{std::forward<T>(values)...} {}
 
   /// The size (number of K) of the LinearEquation
   static constexpr auto Size() -> std::size_t { return sizeof...(Kn); }
+  static_assert(Size() >= 1, "Requires at least one coefficient");
 
   /**
    *  @return k<0> + ((k<1> * x[0]) + (k<2> * x[1]) + ... + (k<n + 1> * x[n]))
@@ -91,7 +92,6 @@ struct LinearEquation {
    */
   template <bool MultiplyRight = true, class... X>
   constexpr auto Solve(X&&... x) const {
-    static_assert(Size() >= 1);
     static_assert(
         (Size() - 1) >= (sizeof...(X)),
         "Not enought coefficients to solve this as a linear equation");
