@@ -2,6 +2,7 @@
 
 #include "gtest/gtest.h"
 #include "lfc/utils/tuple.hpp"
+#include "tests/overload.hpp"
 
 using namespace std::literals::string_view_literals;
 
@@ -116,6 +117,55 @@ TEST(TestTuple, SliceTuple) {
 
   EXPECT_EQ((SliceTuple<1>(std::make_tuple(1, 2, 3, 4))),
             std::make_tuple(2, 3, 4));
+}
+
+TEST(TestTuple, ReduceTuple) {
+  EXPECT_EQ(5, ReduceTuple(std::make_tuple(1, 1, 1, 1, 1), 0,
+                           [](auto lhs, auto rhs) { return lhs + rhs; }));
+
+  using tests::Overload;
+  EXPECT_EQ(4 + 6, ReduceTuple<std::size_t>(
+                       std::make_tuple(1, 1, "Coucou"sv, 1, 1), 0,
+                       Overload{
+                           [](std::size_t init, int v) { return init + v; },
+                           [](std::size_t init, std::string_view v) {
+                             return init + v.size();
+                           },
+                       }));
+}
+
+TEST(TestTuple, TransformTuple) {
+  EXPECT_EQ(std::make_tuple(3, 3, 3),
+            TransformTuples(std::make_tuple(1, 1, 1), std::make_tuple(2, 2, 2),
+                            [](auto lhs, auto rhs) { return lhs + rhs; }));
+
+  EXPECT_EQ(std::make_tuple(3, 3),
+            TransformTuples(std::make_tuple(1, 1, 1, 1, 1, 1, 1),
+                            std::make_tuple(2, 2),
+                            [](auto lhs, auto rhs) { return lhs + rhs; }));
+
+  EXPECT_EQ(
+      std::make_tuple(3),
+      TransformTuples(std::make_tuple(1), std::make_tuple(2, 2, 2, 2, 2, 2),
+                      [](auto lhs, auto rhs) { return lhs + rhs; }));
+
+  using tests::Overload;
+  EXPECT_EQ(std::make_tuple("Foo Bar"sv, 0, 3.14),
+            TransformTuples(std::make_tuple("Foo"sv, 1, ""),
+                            std::make_tuple("Bar"sv, 1, 0.),
+                            Overload{
+                                [](std::string_view lhs, std::string_view rhs) {
+                                  std::string out;
+                                  out.reserve(lhs.size() + 1 + rhs.size() + 1);
+
+                                  out.append(lhs);
+                                  out.append(" ");
+                                  out.append(rhs);
+                                  return out;
+                                },
+                                [](int lhs, int rhs) { return lhs - rhs; },
+                                [](auto, auto) { return 3.14; },
+                            }));
 }
 
 }  // namespace

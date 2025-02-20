@@ -11,13 +11,13 @@ namespace lfc::utils {
  *  @return tuple<> Containing only forwarding references to the input tuple
  *                  elements
  */
-template <class TplLike>
-constexpr auto ForwardTuple(TplLike&& tpl) noexcept {
+template <class Tpl>
+constexpr auto ForwardTuple(Tpl&& tpl) noexcept {
   return std::apply(
       [](auto&&... elems) {
         return std::forward_as_tuple(std::forward<decltype(elems)>(elems)...);
       },
-      std::forward<TplLike>(tpl));
+      std::forward<Tpl>(tpl));
 }
 
 /**
@@ -26,19 +26,19 @@ constexpr auto ForwardTuple(TplLike&& tpl) noexcept {
  *
  *  @param[in] tpl Tuple like object we wish to sub tuple from
  */
-template <std::size_t... I, class TplLike>
-constexpr auto MakeSubTuple(TplLike&& tpl) noexcept
-    -> std::tuple<std::tuple_element_t<I, std::decay_t<TplLike>>...> {
-  return {std::get<I>(std::forward<TplLike>(tpl))...};
+template <std::size_t... I, class Tpl>
+constexpr auto MakeSubTuple(Tpl&& tpl) noexcept
+    -> std::tuple<std::tuple_element_t<I, std::decay_t<Tpl>>...> {
+  return {std::get<I>(std::forward<Tpl>(tpl))...};
 }
 
 /**
  *  @brief Same as MakeSubTuple(tpl) using an index_sequence helper as
  * argument to automatically deduce indexes
  */
-template <std::size_t... I, class TplLike>
-constexpr auto MakeSubTuple(std::index_sequence<I...>, TplLike&& tpl) noexcept {
-  return MakeSubTuple<I...>(std::forward<TplLike>(tpl));
+template <std::size_t... I, class Tpl>
+constexpr auto MakeSubTuple(std::index_sequence<I...>, Tpl&& tpl) noexcept {
+  return MakeSubTuple<I...>(std::forward<Tpl>(tpl));
 }
 
 /**
@@ -52,25 +52,55 @@ constexpr auto MakeSubTuple(std::index_sequence<I...>, TplLike&& tpl) noexcept {
  *
  *  @param[in] tpl Tuple like object we wish to slice
  */
-template <std::size_t Begin, std::size_t Size, class TplLike>
-constexpr auto SliceTuple(TplLike&& tpl) noexcept {
-  constexpr std::size_t TupleSize = std::tuple_size_v<std::decay_t<TplLike>>;
+template <std::size_t Begin, std::size_t Size, class Tpl>
+constexpr auto SliceTuple(Tpl&& tpl) noexcept {
+  constexpr std::size_t TupleSize = std::tuple_size_v<std::decay_t<Tpl>>;
   static_assert(Begin + Size <= TupleSize);
 
   return MakeSubTuple(MakeIndexSequenceStartingAt<Begin, Size>{},
-                      std::forward<TplLike>(tpl));
+                      std::forward<Tpl>(tpl));
 }
 
 /**
  *  @brief Specialization of SliceTuple() taking only the beginning of the
  *         slice, up until the end of the input tuple
  */
-template <std::size_t Begin, class TplLike>
-constexpr auto SliceTuple(TplLike&& tpl) noexcept {
-  constexpr std::size_t TupleSize = std::tuple_size_v<std::decay_t<TplLike>>;
+template <std::size_t Begin, class Tpl>
+constexpr auto SliceTuple(Tpl&& tpl) noexcept {
+  constexpr std::size_t TupleSize = std::tuple_size_v<std::decay_t<Tpl>>;
   static_assert(Begin < TupleSize);
 
-  return SliceTuple<Begin, (TupleSize - Begin)>(std::forward<TplLike>(tpl));
+  return SliceTuple<Begin, (TupleSize - Begin)>(std::forward<Tpl>(tpl));
+}
+
+template <class T, class Tpl, class BinaryOp>
+constexpr auto ReduceTuple(Tpl&& tpl, T init, BinaryOp&& f) -> T {
+  return std::apply(
+      [&](auto&&... v) {
+        return ((init = f(init, std::forward<decltype(v)>(v))), ...);
+      },
+      std::forward<Tpl>(tpl));
+}
+
+namespace details {
+
+template <std::size_t... I, class BinaryOp, class LhsTpl, class RhsTpl>
+constexpr auto TransformTuplesImpl(std::index_sequence<I...>, LhsTpl&& lhs,
+                                   RhsTpl&& rhs, BinaryOp&& f) {
+  return std::make_tuple(f(std::get<I>(std::forward<LhsTpl>(lhs)),
+                           std::get<I>(std::forward<RhsTpl>(rhs)))...);
+}
+
+}  // namespace details
+
+template <class LhsTpl, class RhsTpl, class BinaryOp>
+constexpr auto TransformTuples(LhsTpl&& lhs, RhsTpl&& rhs, BinaryOp&& f) {
+  constexpr auto Size = std::min(std::tuple_size_v<std::decay_t<LhsTpl>>,
+                                 std::tuple_size_v<std::decay_t<RhsTpl>>);
+
+  return details::TransformTuplesImpl(
+      std::make_index_sequence<Size>{}, std::forward<LhsTpl>(lhs),
+      std::forward<RhsTpl>(rhs), std::forward<BinaryOp>(f));
 }
 
 }  // namespace lfc::utils

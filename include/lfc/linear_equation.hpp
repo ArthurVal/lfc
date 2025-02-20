@@ -58,10 +58,12 @@ constexpr bool IsLinearEquation_v = IsLinearEquation<T>::value;
 
 }  // namespace details
 
-// Generic LinearEquation, solving K0 + (Kn[0] * X0) + (Kn[1] * X1) + ...
+// Generic LinearEquation, solving Kn[0] + (Kn[1] * X0) + (Kn[2] * X1) + ...
 template <class... Kn>
 struct LinearEquation {
-  std::tuple<Kn...> kn; /*!< Kn coeffs multiplied to the inputs x */
+  using kn_t = std::tuple<Kn...>;
+
+  kn_t kn; /*!< Kn coeffs multiplied to the inputs x */
 
   constexpr LinearEquation() = default;
   constexpr LinearEquation(const LinearEquation&) = default;
@@ -78,8 +80,8 @@ struct LinearEquation {
   static constexpr auto Size() -> std::size_t { return sizeof...(Kn); }
 
   /**
-   *  @return k0 + ((kn[0] * x[0]) + (kn[1] * x[1]) + ... + (kn[n] * x[n])) with
-   *          n being the number of x provided.
+   *  @return k<0> + ((k<1> * x[0]) + (k<2> * x[1]) + ... + (k<n + 1> * x[n]))
+   *          with n being the number of x provided.
    *
    *  @note Set MultiplyRight to false in order to do
    *        ((x[0] * kn[0]) + (x[1] * kn[1]) + ... + (x[n] * kn[n])) instead, in
