@@ -73,76 +73,6 @@ struct LinearEquation {
   constexpr LinearEquation(_K0&& _k0, _Kn&&... _kn)
       : m_k0(std::forward<_K0>(_k0)), m_kn{std::forward<_Kn>(_kn)...} {}
 
-  /// Return a tuple of every coefficients of the given Equation
-  template <
-      class AnyEq,
-      std::enable_if_t<std::is_same_v<std::decay_t<AnyEq>, LinearEquation>,
-                       bool> = true>
-  friend constexpr auto AsTuple(AnyEq&& eq) noexcept {
-    return std::apply(
-        [&eq](auto&&... kn) {
-          return std::forward_as_tuple(std::forward<AnyEq>(eq).m_k0,
-                                       std::forward<decltype(kn)>(kn)...);
-        },
-        std::forward<AnyEq>(eq).m_kn);
-  }
-
-  /// Access the Nth coefficient (lvalue)
-  template <std::size_t N>
-  constexpr auto k() & noexcept -> auto& {
-    return std::get<N>(AsTuple(*this));
-  }
-
-  /// Access the Nth coefficient (const lvalue)
-  template <std::size_t N>
-  constexpr auto k() const& noexcept -> const auto& {
-    return std::get<N>(AsTuple(*this));
-  }
-
-  /// Access the Nth coefficient (rvalue)
-  template <std::size_t N>
-  constexpr auto k() && noexcept -> auto&& {
-    return std::get<N>(AsTuple(*this));
-  }
-
-  /// Access the Nth coefficient (const rvalue)
-  template <std::size_t N>
-  constexpr auto k() const&& noexcept -> const auto&& {
-    return std::get<N>(AsTuple(*this));
-  }
-
-  /**
-   *  @brief Iterate over all coefficients K of any LinearEquation eq
-   *
-   *  @param[in] eq LinearEquation we wish to iterates over
-   *  @param[in] op Functor called for each coefficients 'k' of type K, if
-   *                'op(k)' is defined. Additionally, if 'op(k, std::size_t)' is
-   *                defined, called it with the index of k as second argument.
-   */
-  template <
-      class AnyEq, class Op,
-      std::enable_if_t<std::is_same_v<std::decay_t<AnyEq>, LinearEquation>,
-                       bool> = true>
-  friend constexpr auto ForEachCoeffsOf(AnyEq&& eq, Op&& op) -> void {
-    constexpr auto DoCall = [](auto&& f, auto&& k, std::size_t i) {
-      if constexpr (std::is_invocable_v<decltype(f), decltype(k),
-                                        std::size_t>) {
-        f(std::forward<decltype(k)>(k), i);
-      } else if constexpr (std::is_invocable_v<decltype(f), decltype(k)>) {
-        f(std::forward<decltype(k)>(k));
-      } else {
-        // Type of k not handled
-      }
-    };
-
-    std::apply(
-        [&](auto&&... k) {
-          std::size_t i = 0;
-          (DoCall(op, std::forward<decltype(k)>(k), i++), ...);
-        },
-        AsTuple(std::forward<AnyEq>(eq)));
-  }
-
   /// The size (number of K) of the LinearEquation
   static constexpr auto Size() -> std::size_t { return 1 + sizeof...(Kn); }
 
@@ -172,7 +102,105 @@ struct LinearEquation {
     }
   }
 
+  /// Return a tuple of every coefficients of the given Equation
+  template <
+      class LinEq,
+      std::enable_if_t<std::is_same_v<std::decay_t<LinEq>, LinearEquation>,
+                       bool> = true>
+  friend constexpr auto AsTuple(LinEq&& eq) noexcept {
+    return std::apply(
+        [&eq](auto&&... kn) {
+          return std::forward_as_tuple(std::forward<LinEq>(eq).m_k0,
+                                       std::forward<decltype(kn)>(kn)...);
+        },
+        std::forward<LinEq>(eq).m_kn);
+  }
+
+  /// Access the Nth coefficient (lvalue)
+  template <std::size_t N>
+  constexpr auto k() & noexcept -> auto& {
+    return std::get<N>(AsTuple(*this));
+  }
+
+  /// Access the Nth coefficient (const lvalue)
+  template <std::size_t N>
+  constexpr auto k() const& noexcept -> const auto& {
+    return std::get<N>(AsTuple(*this));
+  }
+
+  /// Access the Nth coefficient (rvalue)
+  template <std::size_t N>
+  constexpr auto k() && noexcept -> auto&& {
+    return std::get<N>(AsTuple(*this));
+  }
+
+  /// Access the Nth coefficient (const rvalue)
+  template <std::size_t N>
+  constexpr auto k() const&& noexcept -> const auto&& {
+    return std::get<N>(AsTuple(*this));
+  }
+
+  /**
+   *  @brief Visit coefficients K of the linear equation
+   *
+   *  @tparam Visitor Use to visit the coefficients. Must be a callable
+   *                  with one of the following signature:
+   *                  - (K_t, std::size_t) -> void;
+   *                  - (K_t) -> void;
+   *
+   *  @param[in] v Visitor called for each coefficients 'k' of type K, if
+   *               'v(k)' is defined. Additionally, if 'v(k, std::size_t)' is
+   *               defined, called it with the index of k as second argument.
+   */
+  template <class Visitor>
+  constexpr auto ForEachCoeffsDo(Visitor&& v) & -> void {
+    ForEachImpl(std::forward<Visitor>(v), *this);
+  }
+
+  template <class Visitor>
+  constexpr auto ForEachCoeffsDo(Visitor&& v) const& -> void {
+    ForEachImpl(std::forward<Visitor>(v), *this);
+  }
+
+  template <class Visitor>
+  constexpr auto ForEachCoeffsDo(Visitor&& v) && -> void {
+    ForEachImpl(std::forward<Visitor>(v), *this);
+  }
+
+  template <class Visitor>
+  constexpr auto ForEachCoeffsDo(Visitor&& v) const&& -> void {
+    ForEachImpl(std::forward<Visitor>(v), *this);
+  }
+
+  /**
+   *  @brief Call f with all coeffs as argument (same as std::apply())
+   *
+   *  @param[in] f Function called with all coefficients
+   */
+  template <class F>
+  constexpr auto ApplyToCoeffs(F&& f) & -> decltype(auto) {
+    return ApplyImpl(std::forward<F>(f), *this);
+  }
+
+  template <class F>
+  constexpr auto ApplyToCoeffs(F&& f) const& -> decltype(auto) {
+    return ApplyImpl(std::forward<F>(f), *this);
+  }
+
+  template <class F>
+  constexpr auto ApplyToCoeffs(F&& f) && -> decltype(auto) {
+    return ApplyImpl(std::forward<F>(f), *this);
+  }
+
+  template <class F>
+  constexpr auto ApplyToCoeffs(F&& f) const&& -> decltype(auto) {
+    return ApplyImpl(std::forward<F>(f), *this);
+  }
+
  private:
+  K0 m_k0;                /*!< K0 constant coeff */
+  std::tuple<Kn...> m_kn; /*!< Kn coeffs multiplied to the inputs x */
+
   /**
    *  @brief Implementation of Solve, effectively doing a transform/reduce over
    *         2 tuples, using I as indexes
@@ -184,8 +212,41 @@ struct LinearEquation {
                    std::get<I>(std::forward<RhsTpl>(rhs))));
   }
 
-  K0 m_k0;                /*!< K0 constant coeff */
-  std::tuple<Kn...> m_kn; /*!< Kn coeffs multiplied to the inputs x */
+  /**
+   *  @brief ForEachCoeffsDo generic implementation, taking care of all
+   *         references stuff (needed without deducing this from c++20)
+   */
+  template <class Visitor, class LinEq,
+            std::enable_if_t<details::IsLinearEquation_v<std::decay_t<LinEq>>,
+                             bool> = true>
+  static constexpr auto ForEachImpl(Visitor&& v, LinEq&& eq) -> void {
+    constexpr auto DoCall = [](auto&& f, auto&& k, std::size_t i) {
+      if constexpr (std::is_invocable_v<decltype(f), decltype(k),
+                                        std::size_t>) {
+        f(std::forward<decltype(k)>(k), i);
+      } else if constexpr (std::is_invocable_v<decltype(f), decltype(k)>) {
+        f(std::forward<decltype(k)>(k));
+      } else {
+        // Type of k not handled
+      }
+    };
+
+    std::forward<LinEq>(eq).ApplyToCoeffs([&](auto&&... k) {
+      std::size_t i = 0;
+      (DoCall(v, std::forward<decltype(k)>(k), i++), ...);
+    });
+  }
+
+  /**
+   *  @brief ApplyToCoeffs generic implementation taking care of all
+   *         references stuff (needed without deducing this from c++20)
+   */
+  template <class F, class LinEq,
+            std::enable_if_t<details::IsLinearEquation_v<std::decay_t<LinEq>>,
+                             bool> = true>
+  static constexpr auto ApplyImpl(F&& f, LinEq&& eq) -> decltype(auto) {
+    return std::apply(std::forward<F>(f), AsTuple(std::forward<LinEq>(eq)));
+  }
 };
 
 /**

@@ -235,7 +235,41 @@ TEST(TestLinearEquation, Forward) {
                      LinearEquation<int&&, char&&>>);
 }
 
-TEST(TestLinearEquation, ForEach) {
+TEST(TestLinearEquation, ApplyToCoefs) {
+  using testing::StrictMock;
+  using tests::CallableMock;
+
+  auto mock = StrictMock<CallableMock<int, int, double, const char*>>{};
+  using testing::Return;
+
+  EXPECT_CALL(mock, Call(std::make_tuple(1, 3.14, "Coucou")))
+      .Times(1)
+      .WillRepeatedly(Return(-1))
+      .RetiresOnSaturation();
+
+  EXPECT_EQ(ForwardAsLinearEquation(1, 3.14, "Coucou").ApplyToCoeffs(mock), -1);
+
+  {
+    // More realistic example without mocks, for documentation purposes
+    auto eq = MakeLinearEquation(1, 1, 1, 1, 1);
+    EXPECT_EQ(eq.ApplyToCoeffs([](auto&... k) -> std::string {
+      ((++k), ...);
+      return "Coucou";
+    }),
+              "Coucou");
+
+    EXPECT_EQ(AsTuple(eq), std::make_tuple(2, 2, 2, 2, 2));
+
+    // Checks that all coeffs are equals to 2
+    EXPECT_TRUE(
+        eq.ApplyToCoeffs([](auto... k) -> bool { return ((k == 2) and ...); }));
+
+    // Sum all coeffs
+    EXPECT_EQ(10, eq.ApplyToCoeffs([](auto... k) { return (k + ...); }));
+  }
+}
+
+TEST(TestLinearEquation, ForEachCoefsDo) {
   using testing::StrictMock;
   using tests::CallableMock;
 
@@ -246,7 +280,7 @@ TEST(TestLinearEquation, ForEach) {
         .Times(4)
         .WillRepeatedly(Return())
         .RetiresOnSaturation();
-    ForEachCoeffsOf(ForwardAsLinearEquation(1, 1, 1, 1), mock);
+    ForwardAsLinearEquation(1, 1, 1, 1).ForEachCoeffsDo(mock);
   }
 
   {
@@ -258,7 +292,7 @@ TEST(TestLinearEquation, ForEach) {
         .WillRepeatedly(Return())
         .RetiresOnSaturation();
 
-    ForEachCoeffsOf(ForwardAsLinearEquation(1, 1, "Coucou", 1), mock);
+    ForwardAsLinearEquation(1, 1, "Coucou", 1).ForEachCoeffsDo(mock);
   }
 
   {
@@ -275,7 +309,7 @@ TEST(TestLinearEquation, ForEach) {
         .WillRepeatedly(Return())
         .RetiresOnSaturation();
 
-    ForEachCoeffsOf(ForwardAsLinearEquation(1, "a", 1, "Coucou", 1), mock);
+    ForwardAsLinearEquation(1, "a", 1, "Coucou", 1).ForEachCoeffsDo(mock);
   }
 }
 
