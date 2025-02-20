@@ -162,4 +162,43 @@ constexpr auto TransformTuples(F&& f, TplLikes&&... tpls) {
       std::forward<F>(f),
       std::forward_as_tuple(std::forward<TplLikes>(tpls)...));
 }
+
+/**
+ *  @brief Apply Transform on the input tuple, then Reduce.
+ *
+ *  Correspond to the following:
+ *  Tuple A  Tuple B  ...  Tuple M         TRANSFORM         Tuple R (size N)
+ *   [A_1]    [B_1]   ...   [M_1]  -> t(A_1, B_1, ..., M_1) -> [R_1]
+ *   [A_2]    [B_2]   ...   [M_2]  -> t(A_2, B_2, ..., M_2) -> [R_2]
+ *    ...      ...    ...    ...   -> t(..., ..., ..., ...) ->  ...
+ *   [A_N]    [B_N]   ...   [M_N]  -> t(A_N, B_N, ..., M_N) -> [R_N]
+ *   [A_N+1]  [B_N+1] ...
+ *    ...      ...                                               |
+ *    ...      ...                                               V
+ *                                                |  init = r(init, [R_1])
+ *                                         REDUCE |  init = r(init, [R_2])
+ *                                                |           ...
+ *                                                |  init = r(init, [R_N])
+ *                                                               |
+ *                                                               V
+ *                                                             init
+ *
+ *  With N being the size of the smallest tuple (in this example M).
+ *
+ *  @param[in] init The initial value containing the reduced value
+ *  @param[in] r The reduction operator
+ *  @param[in] t The transform operator
+ *  @param[in] tpls... All tuples we wish to transform
+ *
+ *  @return T Result of the reduction operation, follwing the transformation
+ */
+template <class T, class ReduceOp, class TransformOp, class... TplLikes>
+constexpr auto TransformReduceTuples(T init, ReduceOp&& r, TransformOp&& t,
+                                     TplLikes&&... tpls) {
+  return ReduceTuple(std::forward<ReduceOp>(r),
+                     TransformTuples(std::forward<TransformOp>(t),
+                                     std::forward<TplLikes>(tpls)...),
+                     std::move(init));
+}
+
 }  // namespace lfc::utils

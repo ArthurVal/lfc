@@ -174,6 +174,20 @@ TEST(TestTuple, TransformTuple) {
                             std::make_tuple("Bar"sv, 1, 0.)));
 }
 
+TEST(TestTuple, TransformReduceTuples) {
+  constexpr auto Add = [](auto... v) { return (... + v); };
+  constexpr auto Mul = [](auto... v) { return (... * v); };
+
+  EXPECT_EQ((10 + (2 * 1) + (4 * 3)),
+            TransformReduceTuples(10, Add, Mul, std::make_tuple(2, 4, 6),
+                                  std::make_tuple(1, 3)));
+
+  EXPECT_EQ(
+      (20 * (2 + 1 - 1) * (4 + 3 - 5)),
+      TransformReduceTuples(20, Mul, Add, std::make_tuple(2, 4, 8),
+                            std::make_tuple(1, 3), std::make_tuple(-1, -5)));
+}
+
 }  // namespace
 
 }  // namespace lfc::utils
