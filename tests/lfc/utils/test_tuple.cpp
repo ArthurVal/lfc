@@ -120,18 +120,18 @@ TEST(TestTuple, SliceTuple) {
 }
 
 TEST(TestTuple, ReduceTuple) {
-  EXPECT_EQ(5, ReduceTuple(std::make_tuple(1, 1, 1, 1, 1), 0,
-                           [](auto lhs, auto rhs) { return lhs + rhs; }));
+  EXPECT_EQ(10, ReduceTuple([](auto lhs, auto rhs) { return lhs + rhs; },
+                            std::make_tuple(1, 1, 1, 1, 1), 5));
 
   using tests::Overload;
   EXPECT_EQ(4 + 6, ReduceTuple<std::size_t>(
-                       std::make_tuple(1, 1, "Coucou"sv, 1, 1), 0,
                        Overload{
                            [](std::size_t init, int v) { return init + v; },
                            [](std::size_t init, std::string_view v) {
                              return init + v.size();
                            },
-                       }));
+                       },
+                       std::make_tuple(1, 1, "Coucou"sv, 1, 1)));
 }
 
 TEST(TestTuple, TransformTuple) {

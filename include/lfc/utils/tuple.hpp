@@ -76,15 +76,15 @@ constexpr auto SliceTuple(Tpl&& tpl) noexcept {
  *  @brief Reduce the given tuple, applying init = f(init, e) for each elements
  *         'e' of the given input tuple
  *
- *  @param[in] tpl The tuple we wish to reduce
- *  @param[in] init The initial value containing the reduced value
  *  @param[in] f A binary operator called with the following signature:
  *               f(T, tuple_element_t<I>) -> T for each elements I of the tuple;
+ *  @param[in] tpl The tuple we wish to reduce
+ *  @param[in] init The initial value containing the reduced value
  *
  *  @return T Result of the reduction operation
  */
 template <class T, class Tpl, class BinaryOp>
-constexpr auto ReduceTuple(Tpl&& tpl, T init, BinaryOp&& f) -> T {
+constexpr auto ReduceTuple(BinaryOp&& f, Tpl&& tpl, T init = T{}) -> T {
   return std::apply(
       [&](auto&&... v) {
         return ((init = f(init, std::forward<decltype(v)>(v))), ...);
