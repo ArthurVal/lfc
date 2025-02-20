@@ -143,22 +143,22 @@ struct LinearEquation {
    */
   template <class Visitor>
   constexpr auto ForEachCoeffsDo(Visitor&& v) & -> void {
-    ForEachImpl(std::forward<Visitor>(v), *this);
+    ForEachImpl(*this, std::forward<Visitor>(v));
   }
 
   template <class Visitor>
   constexpr auto ForEachCoeffsDo(Visitor&& v) const& -> void {
-    ForEachImpl(std::forward<Visitor>(v), *this);
+    ForEachImpl(*this, std::forward<Visitor>(v));
   }
 
   template <class Visitor>
   constexpr auto ForEachCoeffsDo(Visitor&& v) && -> void {
-    ForEachImpl(std::forward<Visitor>(v), *this);
+    ForEachImpl(*this, std::forward<Visitor>(v));
   }
 
   template <class Visitor>
   constexpr auto ForEachCoeffsDo(Visitor&& v) const&& -> void {
-    ForEachImpl(std::forward<Visitor>(v), *this);
+    ForEachImpl(*this, std::forward<Visitor>(v));
   }
 
   /**
@@ -168,22 +168,22 @@ struct LinearEquation {
    */
   template <class F>
   constexpr auto ApplyToCoeffs(F&& f) & -> decltype(auto) {
-    return ApplyImpl(std::forward<F>(f), *this);
+    return ApplyImpl(*this, std::forward<F>(f));
   }
 
   template <class F>
   constexpr auto ApplyToCoeffs(F&& f) const& -> decltype(auto) {
-    return ApplyImpl(std::forward<F>(f), *this);
+    return ApplyImpl(*this, std::forward<F>(f));
   }
 
   template <class F>
   constexpr auto ApplyToCoeffs(F&& f) && -> decltype(auto) {
-    return ApplyImpl(std::forward<F>(f), *this);
+    return ApplyImpl(*this, std::forward<F>(f));
   }
 
   template <class F>
   constexpr auto ApplyToCoeffs(F&& f) const&& -> decltype(auto) {
-    return ApplyImpl(std::forward<F>(f), *this);
+    return ApplyImpl(*this, std::forward<F>(f));
   }
 
  private:
@@ -202,10 +202,10 @@ struct LinearEquation {
    *  @brief ForEachCoeffsDo generic implementation, taking care of all
    *         references stuff (needed without deducing this from c++20)
    */
-  template <class Visitor, class LinEq,
+  template <class LinEq, class Visitor,
             std::enable_if_t<details::IsLinearEquation_v<std::decay_t<LinEq>>,
                              bool> = true>
-  static constexpr auto ForEachImpl(Visitor&& v, LinEq&& eq) -> void {
+  static constexpr auto ForEachImpl(LinEq&& eq, Visitor&& v) -> void {
     constexpr auto DoCall = [](auto&& f, auto&& k, std::size_t i) {
       if constexpr (std::is_invocable_v<decltype(f), decltype(k),
                                         std::size_t>) {
@@ -227,10 +227,10 @@ struct LinearEquation {
    *  @brief ApplyToCoeffs generic implementation taking care of all
    *         references stuff (needed without deducing this from c++20)
    */
-  template <class F, class LinEq,
+  template <class LinEq, class F,
             std::enable_if_t<details::IsLinearEquation_v<std::decay_t<LinEq>>,
                              bool> = true>
-  static constexpr auto ApplyImpl(F&& f, LinEq&& eq) -> decltype(auto) {
+  static constexpr auto ApplyImpl(LinEq&& eq, F&& f) -> decltype(auto) {
     return std::apply(std::forward<F>(f), std::forward<LinEq>(eq).kn);
   }
 };
