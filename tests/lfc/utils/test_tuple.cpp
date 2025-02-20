@@ -135,25 +135,29 @@ TEST(TestTuple, ReduceTuple) {
 }
 
 TEST(TestTuple, TransformTuple) {
-  EXPECT_EQ(std::make_tuple(3, 3, 3),
-            TransformTuples(std::make_tuple(1, 1, 1), std::make_tuple(2, 2, 2),
-                            [](auto lhs, auto rhs) { return lhs + rhs; }));
+  EXPECT_EQ(
+      std::make_tuple(3, 3, 3),
+      TransformTuples([](auto lhs, auto rhs) { return lhs + rhs; },
+                      std::make_tuple(1, 1, 1), std::make_tuple(2, 2, 2)));
+
+  EXPECT_EQ(std::make_tuple(6, 7, 8),
+            TransformTuples([](auto... v) { return (... + v); },
+                            std::make_tuple(1, 2, 3), std::make_tuple(2, 2, 2),
+                            std::make_tuple(3, 3, 3)));
 
   EXPECT_EQ(std::make_tuple(3, 3),
-            TransformTuples(std::make_tuple(1, 1, 1, 1, 1, 1, 1),
-                            std::make_tuple(2, 2),
-                            [](auto lhs, auto rhs) { return lhs + rhs; }));
+            TransformTuples([](auto lhs, auto rhs) { return lhs + rhs; },
+                            std::make_tuple(1, 1, 1, 1, 1, 1, 1),
+                            std::make_tuple(2, 2)));
 
   EXPECT_EQ(
       std::make_tuple(3),
-      TransformTuples(std::make_tuple(1), std::make_tuple(2, 2, 2, 2, 2, 2),
-                      [](auto lhs, auto rhs) { return lhs + rhs; }));
+      TransformTuples([](auto lhs, auto rhs) { return lhs + rhs; },
+                      std::make_tuple(1), std::make_tuple(2, 2, 2, 2, 2, 2)));
 
   using tests::Overload;
   EXPECT_EQ(std::make_tuple("Foo Bar"sv, 0, 3.14),
-            TransformTuples(std::make_tuple("Foo"sv, 1, ""),
-                            std::make_tuple("Bar"sv, 1, 0.),
-                            Overload{
+            TransformTuples(Overload{
                                 [](std::string_view lhs, std::string_view rhs) {
                                   std::string out;
                                   out.reserve(lhs.size() + 1 + rhs.size() + 1);
@@ -165,7 +169,9 @@ TEST(TestTuple, TransformTuple) {
                                 },
                                 [](int lhs, int rhs) { return lhs - rhs; },
                                 [](auto, auto) { return 3.14; },
-                            }));
+                            },
+                            std::make_tuple("Foo"sv, 1, ""),
+                            std::make_tuple("Bar"sv, 1, 0.)));
 }
 
 }  // namespace
