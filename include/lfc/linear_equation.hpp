@@ -1,9 +1,9 @@
 #pragma once
 
-#include <tuple>
 #include <utility>  // std::forward
 
 #include "lfc/utils/reference_wrapper.hpp"  // UnwrapRefWrapper_t
+#include "lfc/utils/tuple.hpp"
 
 namespace lfc {
 
@@ -41,7 +41,7 @@ constexpr auto operator+(T&& v, Ignored) noexcept -> T&& {
 }
 
 /// Forward declaration of LinearEquation for the meta function below
-template <class K0, class... Kn>
+template <class... Kn>
 struct LinearEquation;
 
 namespace details {
@@ -59,8 +59,10 @@ constexpr bool IsLinearEquation_v = IsLinearEquation<T>::value;
 }  // namespace details
 
 // Generic LinearEquation, solving K0 + (Kn[0] * X0) + (Kn[1] * X1) + ...
-template <class K0, class... Kn>
+template <class... Kn>
 struct LinearEquation {
+  std::tuple<Kn...> kn; /*!< Kn coeffs multiplied to the inputs x */
+
   constexpr LinearEquation() = default;
   constexpr LinearEquation(const LinearEquation&) = default;
   constexpr LinearEquation(LinearEquation&&) = default;
@@ -69,12 +71,11 @@ struct LinearEquation {
   ~LinearEquation() = default;
 
   /// Construct by forwarding coeffs
-  template <class _K0, class... _Kn>
-  constexpr LinearEquation(_K0&& _k0, _Kn&&... _kn)
-      : m_k0(std::forward<_K0>(_k0)), m_kn{std::forward<_Kn>(_kn)...} {}
+  template <class... _Kn>
+  constexpr LinearEquation(_Kn&&... _kn) : kn{std::forward<_Kn>(_kn)...} {}
 
   /// The size (number of K) of the LinearEquation
-  static constexpr auto Size() -> std::size_t { return 1 + sizeof...(Kn); }
+  static constexpr auto Size() -> std::size_t { return sizeof...(Kn); }
 
   /**
    *  @return k0 + ((kn[0] * x[0]) + (kn[1] * x[1]) + ... + (kn[n] * x[n])) with
@@ -88,56 +89,46 @@ struct LinearEquation {
    */
   template <bool MultiplyRight = true, class... X>
   constexpr auto Solve(X&&... x) const {
+    static_assert(Size() >= 1);
     static_assert(
-        (sizeof...(Kn)) >= (sizeof...(X)),
+        (Size() - 1) >= (sizeof...(X)),
         "Not enought coefficients to solve this as a linear equation");
 
     if constexpr (MultiplyRight) {
-      return m_k0 + SolveImpl(std::make_index_sequence<sizeof...(X)>{}, m_kn,
-                              std::forward_as_tuple(std::forward<X>(x)...));
+      return std::get<0>(kn) +
+             SolveImpl(std::make_index_sequence<sizeof...(X)>{},
+                       utils::SliceTuple<1>(utils::ForwardTuple(kn)),
+                       std::forward_as_tuple(std::forward<X>(x)...));
     } else {
-      return m_k0 + SolveImpl(std::make_index_sequence<sizeof...(X)>{},
-                              std::forward_as_tuple(std::forward<X>(x)...),
-                              m_kn);
+      return std::get<0>(kn) +
+             SolveImpl(std::make_index_sequence<sizeof...(X)>{},
+                       std::forward_as_tuple(std::forward<X>(x)...),
+                       utils::SliceTuple<1>(utils::ForwardTuple(kn)));
     }
-  }
-
-  /// Return a tuple of every coefficients of the given Equation
-  template <
-      class LinEq,
-      std::enable_if_t<std::is_same_v<std::decay_t<LinEq>, LinearEquation>,
-                       bool> = true>
-  friend constexpr auto AsTuple(LinEq&& eq) noexcept {
-    return std::apply(
-        [&eq](auto&&... kn) {
-          return std::forward_as_tuple(std::forward<LinEq>(eq).m_k0,
-                                       std::forward<decltype(kn)>(kn)...);
-        },
-        std::forward<LinEq>(eq).m_kn);
   }
 
   /// Access the Nth coefficient (lvalue)
   template <std::size_t N>
   constexpr auto k() & noexcept -> auto& {
-    return std::get<N>(AsTuple(*this));
+    return std::get<N>(kn);
   }
 
   /// Access the Nth coefficient (const lvalue)
   template <std::size_t N>
   constexpr auto k() const& noexcept -> const auto& {
-    return std::get<N>(AsTuple(*this));
+    return std::get<N>(kn);
   }
 
   /// Access the Nth coefficient (rvalue)
   template <std::size_t N>
   constexpr auto k() && noexcept -> auto&& {
-    return std::get<N>(AsTuple(*this));
+    return std::get<N>(kn);
   }
 
   /// Access the Nth coefficient (const rvalue)
   template <std::size_t N>
   constexpr auto k() const&& noexcept -> const auto&& {
-    return std::get<N>(AsTuple(*this));
+    return std::get<N>(kn);
   }
 
   /**
@@ -198,9 +189,6 @@ struct LinearEquation {
   }
 
  private:
-  K0 m_k0;                /*!< K0 constant coeff */
-  std::tuple<Kn...> m_kn; /*!< Kn coeffs multiplied to the inputs x */
-
   /**
    *  @brief Implementation of Solve, effectively doing a transform/reduce over
    *         2 tuples, using I as indexes
@@ -245,7 +233,7 @@ struct LinearEquation {
             std::enable_if_t<details::IsLinearEquation_v<std::decay_t<LinEq>>,
                              bool> = true>
   static constexpr auto ApplyImpl(F&& f, LinEq&& eq) -> decltype(auto) {
-    return std::apply(std::forward<F>(f), AsTuple(std::forward<LinEq>(eq)));
+    return std::apply(std::forward<F>(f), std::forward<LinEq>(eq).kn);
   }
 };
 

@@ -84,8 +84,6 @@ TEST(TestLinearEquation, Make) {
   {
     auto eq = MakeLinearEquation(1, 2);
     EXPECT_EQ(eq.Size(), 2);
-
-    EXPECT_EQ(AsTuple(eq), std::make_tuple(1, 2));
     EXPECT_EQ(eq.k<0>(), 1);
     EXPECT_EQ(eq.k<1>(), 2);
   }
@@ -258,7 +256,7 @@ TEST(TestLinearEquation, ApplyToCoefs) {
     }),
               "Coucou");
 
-    EXPECT_EQ(AsTuple(eq), std::make_tuple(2, 2, 2, 2, 2));
+    EXPECT_EQ(eq.kn, std::make_tuple(2, 2, 2, 2, 2));
 
     // Checks that all coeffs are equals to 2
     EXPECT_TRUE(
