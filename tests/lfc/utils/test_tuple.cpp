@@ -61,6 +61,16 @@ TEST(TestTuple, VisitTuple) {
   }
 }
 
+template <class T>
+struct Accumulator {
+  T accumulated = 0;
+
+  Accumulator& Add(T v) {
+    accumulated += v;
+    return *this;
+  }
+};
+
 TEST(TestTuple, ReduceTuple) {
   EXPECT_EQ((5 + (1 + 1 + 1 + 1 + 1)),
             ReduceTuple(DoSum, std::make_tuple(1, 1, 1, 1, 1), 5));
@@ -75,6 +85,23 @@ TEST(TestTuple, ReduceTuple) {
                     },
                 },
                 std::make_tuple(1, 1, "Coucou"sv, 1, 1)));
+
+  // We can do some weird stuff ...
+  auto acc = Accumulator<int>{3};
+
+  EXPECT_EQ(ReduceTuple(&Accumulator<int>::Add,
+                        std::make_tuple(5, 3, 0, 5, -100), acc)
+                .accumulated,
+            (3 + (5 + 3 + 0 + 5 - 100)));
+
+  // init is passed by copy, therefore acc is not modified by default...
+  EXPECT_EQ(acc.accumulated, 3);
+
+  // ... But we can use std::ref
+  ReduceTuple(&Accumulator<int>::Add, std::make_tuple(5, 3, 0, 5, -100),
+              std::ref(acc));
+
+  EXPECT_EQ(acc.accumulated, (3 + (5 + 3 + 0 + 5 - 100)));
 }
 
 TEST(TestTuple, TransformTuple) {
