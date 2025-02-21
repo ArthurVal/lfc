@@ -486,8 +486,8 @@ TEST(TestLinearEquation, SolveIgnoredCoeffs) {
 
   auto k1 = StrictMock<ArithmeticMock<int, int>>{};
 
-  // Mocks can't be copied, we must pass by reference
-  auto eq = ForwardAsLinearEquation(Ignored, k1, Ignored);
+  // Mocks can't be copied, we must pass by reference -> Tie
+  auto eq = MakeLinearEquation(Ignored, std::ref(k1), Ignored);
 
   int x1 = 123;
   int x2 = 321;
