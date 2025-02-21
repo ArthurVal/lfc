@@ -17,11 +17,13 @@ TEST(TestTuple, Apply) {
       (1 + 5 + 4),
       (Apply<1, 2, 3>(DoSum, std::make_tuple(50, 1, 5, 4, 5452, "Coucou"))));
 
-  EXPECT_EQ(50 + 1 + 5, (Apply(std::make_index_sequence<3>{}, DoSum,
-                               std::make_tuple(50, 1, 5, 4, 5452, "Coucou"))));
+  EXPECT_EQ(50 + 1 + 5,
+            (Apply(DoSum, std::make_tuple(50, 1, 5, 4, 5452, "Coucou"),
+                   std::make_index_sequence<3>{})));
 
-  EXPECT_EQ((4 + 5452), (Apply(SliceOfIndex<3, 2>(), DoSum,
-                               std::make_tuple(50, 1, 5, 4, 5452, "Coucou"))));
+  EXPECT_EQ((4 + 5452),
+            (Apply(DoSum, std::make_tuple(50, 1, 5, 4, 5452, "Coucou"),
+                   SliceOfIndex<3, 2>())));
 
   EXPECT_EQ((1 + 2 + 3), (Apply(DoSum, std::make_tuple(1, 2, 3))));
 }

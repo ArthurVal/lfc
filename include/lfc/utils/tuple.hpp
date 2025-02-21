@@ -25,9 +25,9 @@ constexpr auto Apply(F&& f, Tpl&& tpl) noexcept -> decltype(auto) {
  *  @brief Same as Apply(f, tpl) using an index_sequence helper as
  *         argument to automatically deduce indexes
  */
-template <std::size_t... I, class F, class Tpl>
-constexpr auto Apply(std::index_sequence<I...>, F&& f,
-                     Tpl&& tpl) noexcept -> decltype(auto) {
+template <class F, class Tpl, std::size_t... I>
+constexpr auto Apply(F&& f, Tpl&& tpl,
+                     std::index_sequence<I...>) noexcept -> decltype(auto) {
   return Apply<I...>(std::forward<F>(f), std::forward<Tpl>(tpl));
 }
 

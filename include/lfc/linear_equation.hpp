@@ -104,8 +104,8 @@ struct LinearEquation {
       return std::forward_as_tuple(std::forward<decltype(v)>(v)...);
     };
 
-    auto sublist_of_k = utils::Apply(utils::SliceOfIndex<1, sizeof...(X)>(),
-                                       ForwardElementsAsTuple, kn);
+    auto sublist_of_k = utils::Apply(ForwardElementsAsTuple, kn,
+                                     utils::SliceOfIndex<1, sizeof...(X)>());
 
     if constexpr (MultiplyRight) {
       return k<0>() + SolveImpl(std::make_index_sequence<sizeof...(X)>{},
