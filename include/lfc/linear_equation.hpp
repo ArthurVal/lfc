@@ -175,31 +175,6 @@ struct LinearEquation {
     ForEachImpl(*this, std::forward<Visitor>(v));
   }
 
-  /**
-   *  @brief Call f with all coeffs as argument (same as std::apply())
-   *
-   *  @param[in] f Function called with all coefficients
-   */
-  template <class F>
-  constexpr auto ApplyToCoeffs(F&& f) & -> decltype(auto) {
-    return ApplyImpl(*this, std::forward<F>(f));
-  }
-
-  template <class F>
-  constexpr auto ApplyToCoeffs(F&& f) const& -> decltype(auto) {
-    return ApplyImpl(*this, std::forward<F>(f));
-  }
-
-  template <class F>
-  constexpr auto ApplyToCoeffs(F&& f) && -> decltype(auto) {
-    return ApplyImpl(*this, std::forward<F>(f));
-  }
-
-  template <class F>
-  constexpr auto ApplyToCoeffs(F&& f) const&& -> decltype(auto) {
-    return ApplyImpl(*this, std::forward<F>(f));
-  }
-
  private:
   /**
    *  @brief Implementation of Solve, effectively doing a transform/reduce over
@@ -231,21 +206,12 @@ struct LinearEquation {
       }
     };
 
-    std::forward<LinEq>(eq).ApplyToCoeffs([&](auto&&... k) {
-      std::size_t i = 0;
-      (DoCall(v, std::forward<decltype(k)>(k), i++), ...);
-    });
-  }
-
-  /**
-   *  @brief ApplyToCoeffs generic implementation taking care of all
-   *         references stuff (needed without deducing this from c++20)
-   */
-  template <class LinEq, class F,
-            std::enable_if_t<details::IsLinearEquation_v<std::decay_t<LinEq>>,
-                             bool> = true>
-  static constexpr auto ApplyImpl(LinEq&& eq, F&& f) -> decltype(auto) {
-    return std::apply(std::forward<F>(f), std::forward<LinEq>(eq).kn);
+    utils::Apply(
+        [&](auto&&... k) {
+          std::size_t i = 0;
+          (DoCall(v, std::forward<decltype(k)>(k), i++), ...);
+        },
+        std::forward<LinEq>(eq).kn);
   }
 };
 
