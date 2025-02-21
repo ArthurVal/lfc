@@ -3,8 +3,9 @@
 #include <type_traits>  // std::true/false_type
 #include <utility>      // std::forward
 
+#include "lfc/utils/interger_sequence.hpp"  // SliceOfIndex
 #include "lfc/utils/reference_wrapper.hpp"  // UnwrapRefWrapper_t
-#include "lfc/utils/tuple.hpp"              // Slice/Forward Tuple
+#include "lfc/utils/tuple.hpp"              // ApplyOn
 
 namespace lfc {
 
@@ -99,14 +100,21 @@ struct LinearEquation {
         (Size() - 1) >= (sizeof...(X)),
         "Not enought coefficients to solve this as a linear equation");
 
+    constexpr auto ForwardElementsAsTuple = [](auto&&... v) {
+      return std::forward_as_tuple(std::forward<decltype(v)>(v)...);
+    };
+
+    auto&& coeffs = utils::ApplyOn(utils::SliceOfIndex<1, sizeof...(X)>(),
+                                   ForwardElementsAsTuple, kn);
+
     if constexpr (MultiplyRight) {
       return k<0>() + SolveImpl(std::make_index_sequence<sizeof...(X)>{},
-                                utils::SliceTuple<1>(utils::ForwardTuple(kn)),
+                                std::forward<decltype(coeffs)>(coeffs),
                                 std::forward_as_tuple(std::forward<X>(x)...));
     } else {
       return k<0>() + SolveImpl(std::make_index_sequence<sizeof...(X)>{},
                                 std::forward_as_tuple(std::forward<X>(x)...),
-                                utils::SliceTuple<1>(utils::ForwardTuple(kn)));
+                                std::forward<decltype(coeffs)>(coeffs));
     }
   }
 

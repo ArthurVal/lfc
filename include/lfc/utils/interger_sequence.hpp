@@ -22,12 +22,14 @@ using OffsetIntegerSequenceBy_t =
 }  // namespace details
 
 template <class T, T Begin, T Size>
-using MakeIntegerSequenceStartingAt =
-    details::OffsetIntegerSequenceBy_t<T, Begin,
-                                       std::make_integer_sequence<T, Size>>;
+constexpr auto SliceOfInts() {
+  return details::OffsetIntegerSequenceBy_t<
+      T, Begin, std::make_integer_sequence<T, Size>>{};
+}
 
 template <std::size_t Begin, std::size_t Size>
-using MakeIndexSequenceStartingAt =
-    MakeIntegerSequenceStartingAt<std::size_t, Begin, Size>;
+constexpr auto SliceOfIndex() {
+  return SliceOfInts<std::size_t, Begin, Size>();
+}
 
 }  // namespace lfc::utils
