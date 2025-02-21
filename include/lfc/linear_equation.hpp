@@ -100,15 +100,14 @@ struct LinearEquation {
         (Size() - 1) >= (sizeof...(X)),
         "Not enought coefficients to solve this as a linear equation");
 
-    constexpr auto ForwardElementsAsTuple = [](auto&&... v) {
+    constexpr auto CreateTupleView = [](auto&&... v) {
       return std::forward_as_tuple(std::forward<decltype(v)>(v)...);
     };
 
     // Generates a sub tuple of size 'sizeof...(X)', excluding k0, that points
     // to each elements of kn
-    auto sub_tuple_view =
-        utils::Apply(ForwardElementsAsTuple, kn,
-                     utils::MakeIndexSequence<sizeof...(X), 1>());
+    auto sub_tuple_view = utils::Apply(
+        CreateTupleView, kn, utils::MakeIndexSequence<sizeof...(X), 1>());
 
     if constexpr (MultiplyRight) {
       return k<0>() + SolveImpl(std::make_index_sequence<sizeof...(X)>{},
