@@ -92,17 +92,16 @@ constexpr auto ReduceTuple(BinaryOp&& f, Tpl&& tpl, T init = T{}) -> T {
 
 namespace details {
 
-template <class T>
-constexpr auto min(T&& t) -> decltype(auto) {
-  return std::forward<T>(t);
-}
-
 template <class T0, class T1, class... Tn>
 constexpr auto min(T0&& t0, T1&& t1, Tn&&... others) -> decltype(auto) {
-  if (t0 < t1) {
-    return min(std::forward<T0>(t0), std::forward<Tn>(others)...);
+  if constexpr (sizeof...(Tn) == 0) {
+    return t0 < t1 ? std::forward<T0>(t0) : std::forward<T1>(t1);
   } else {
-    return min(std::forward<T1>(t1), std::forward<Tn>(others)...);
+    if (t0 < t1) {
+      return min(std::forward<T0>(t0), std::forward<Tn>(others)...);
+    } else {
+      return min(std::forward<T1>(t1), std::forward<Tn>(others)...);
+    }
   }
 }
 
