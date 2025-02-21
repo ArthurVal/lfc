@@ -5,7 +5,7 @@
 namespace lfc::utils {
 
 /**
- *  @brief Call f with the Ith elements of tpl
+ *  @brief Call f with the elements of tpl filters by indexes I
  *
  *  @note Same as std::apply but with a subset of elements
  *
@@ -18,7 +18,7 @@ constexpr auto ApplyOn(F&& f, Tpl&& tpl) noexcept -> decltype(auto) {
 }
 
 /**
- *  @brief Same as ApplyOnlyOn(f, tpl) using an index_sequence helper as
+ *  @brief Same as ApplyOn(f, tpl) using an index_sequence helper as
  *         argument to automatically deduce indexes
  */
 template <std::size_t... I, class F, class Tpl>
