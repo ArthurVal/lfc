@@ -7,24 +7,28 @@ namespace lfc::utils {
 /**
  *  @brief Call f with the elements of tpl filtered by indexes I
  *
- *  @note Same as std::apply but with a subset of elements
+ *  @note Same as std::apply but can be called with a subset of elements
  *
  *  @param[in] f Callable taking all the Ith elements of tpl as arguments
  *  @param[in] tpl Tuple like object
  */
 template <std::size_t... I, class F, class Tpl>
-constexpr auto ApplyOn(F&& f, Tpl&& tpl) noexcept -> decltype(auto) {
-  return f(std::get<I>(std::forward<Tpl>(tpl))...);
+constexpr auto Apply(F&& f, Tpl&& tpl) noexcept -> decltype(auto) {
+  if constexpr (sizeof...(I) == 0) {
+    return std::apply(std::forward<F>(f), std::forward<Tpl>(tpl));
+  } else {
+    return f(std::get<I>(std::forward<Tpl>(tpl))...);
+  }
 }
 
 /**
- *  @brief Same as ApplyOn(f, tpl) using an index_sequence helper as
+ *  @brief Same as Apply(f, tpl) using an index_sequence helper as
  *         argument to automatically deduce indexes
  */
 template <std::size_t... I, class F, class Tpl>
-constexpr auto ApplyOn(std::index_sequence<I...>, F&& f,
-                       Tpl&& tpl) noexcept -> decltype(auto) {
-  return ApplyOn<I...>(std::forward<F>(f), std::forward<Tpl>(tpl));
+constexpr auto Apply(std::index_sequence<I...>, F&& f,
+                     Tpl&& tpl) noexcept -> decltype(auto) {
+  return Apply<I...>(std::forward<F>(f), std::forward<Tpl>(tpl));
 }
 
 /**

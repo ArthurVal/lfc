@@ -12,18 +12,18 @@ namespace {
 
 constexpr auto DoSum = [](auto&&... v) { return (... + v); };
 
-TEST(TestTuple, ApplyOn) {
+TEST(TestTuple, Apply) {
   EXPECT_EQ(
       1 + 5 + 4,
-      (ApplyOn<1, 2, 3>(DoSum, std::make_tuple(50, 1, 5, 4, 5452, "Coucou"))));
+      (Apply<1, 2, 3>(DoSum, std::make_tuple(50, 1, 5, 4, 5452, "Coucou"))));
 
-  EXPECT_EQ(50 + 1 + 5,
-            (ApplyOn(std::make_index_sequence<3>{}, DoSum,
-                     std::make_tuple(50, 1, 5, 4, 5452, "Coucou"))));
+  EXPECT_EQ(50 + 1 + 5, (Apply(std::make_index_sequence<3>{}, DoSum,
+                               std::make_tuple(50, 1, 5, 4, 5452, "Coucou"))));
 
-  EXPECT_EQ((4 + 5452),
-            (ApplyOn(SliceOfIndex<3, 2>(), DoSum,
-                     std::make_tuple(50, 1, 5, 4, 5452, "Coucou"))));
+  EXPECT_EQ((4 + 5452), (Apply(SliceOfIndex<3, 2>(), DoSum,
+                               std::make_tuple(50, 1, 5, 4, 5452, "Coucou"))));
+
+  EXPECT_EQ((1 + 2 + 3), (Apply(DoSum, std::make_tuple(1, 2, 3))));
 }
 
 TEST(TestTuple, ReduceTuple) {

@@ -104,7 +104,7 @@ struct LinearEquation {
       return std::forward_as_tuple(std::forward<decltype(v)>(v)...);
     };
 
-    auto sublist_of_k = utils::ApplyOn(utils::SliceOfIndex<1, sizeof...(X)>(),
+    auto sublist_of_k = utils::Apply(utils::SliceOfIndex<1, sizeof...(X)>(),
                                        ForwardElementsAsTuple, kn);
 
     if constexpr (MultiplyRight) {
