@@ -320,6 +320,9 @@ TEST(TestLinearEquation, Solve) {
   auto k1 = StrictMock<ArithmeticMock<int, int>>{};
   auto k2 = StrictMock<ArithmeticMock<decltype(k1)&, int>>{};
 
+  // Mocks can't be copied, we must pass by reference -> Tie
+  auto eq = TieAsLinearEquation(k0, k1, k2);
+
   int x1 = 123;
   int x2 = 321;
 
@@ -330,66 +333,125 @@ TEST(TestLinearEquation, Solve) {
     testing::InSequence seq;
 
     // (k2 * x2) -> k1
-    EXPECT_CALL(k2, Multiplication(x2, ArgSide::Right))
+    EXPECT_CALL(eq.k<2>(), Multiplication(x2, ArgSide::Right))
         .Times(1)
         .WillOnce(ReturnRef(k1))
         .RetiresOnSaturation();
 
     // (k1 * x1) -> 456
-    EXPECT_CALL(k1, Multiplication(x1, ArgSide::Right))
+    EXPECT_CALL(eq.k<1>(), Multiplication(x1, ArgSide::Right))
         .Times(1)
         .WillOnce(Return(456))
         .RetiresOnSaturation();
 
     // ((k1 * x1) + (k2 * x2))
     // (  456    +     k1    ) -> 789
-    EXPECT_CALL(k1, Addition(456, ArgSide::Left))
+    EXPECT_CALL(eq.k<1>(), Addition(456, ArgSide::Left))
         .Times(1)
         .WillOnce(Return(789))
         .RetiresOnSaturation();
 
     // k0 + ((k1 * x1) + (k2 * x2))
     // k0 + (         789         ) -> -1
-    EXPECT_CALL(k0, Addition(789, ArgSide::Right))
+    EXPECT_CALL(eq.k<0>(), Addition(789, ArgSide::Right))
         .Times(1)
         .WillOnce(Return(-1))
         .RetiresOnSaturation();
 
-    // Mocks can't be copied, we must pass by reference
-    EXPECT_EQ(-1, TieAsLinearEquation(k0, k1, k2).Solve(x1, x2));
+    EXPECT_EQ(-1, eq.Solve(x1, x2));
   }
 
   {
-    using testing::Throw;
-    // Exceptions are correctly forwarded and not intercepted
-    EXPECT_CALL(k2, Multiplication(321, ArgSide::Right))
+    // We can reverse multiplication side using Solve<false>()
+    using testing::Return;
+    using testing::ReturnRef;
+
+    testing::InSequence seq;
+    // (x2 * k2) -> k1
+    EXPECT_CALL(eq.k<2>(), Multiplication(x2, ArgSide::Left))
         .Times(1)
-        .WillOnce(Throw(std::runtime_error{"Hi !"}))
+        .WillOnce(ReturnRef(k1))
         .RetiresOnSaturation();
 
-    EXPECT_THROW(
-        {
-          auto _ = TieAsLinearEquation(k0, k1, k2).Solve(123, 321);
-          (void)_;
-        },
-        std::runtime_error);
+    // (x1 * k1) -> 456
+    EXPECT_CALL(eq.k<1>(), Multiplication(x1, ArgSide::Left))
+        .Times(1)
+        .WillOnce(Return(456))
+        .RetiresOnSaturation();
+
+    // Addition are unchanged
+    // ((x1 * k1) + (x2 * k2))
+    // (  456    +     k1    ) -> 789
+    EXPECT_CALL(eq.k<1>(), Addition(456, ArgSide::Left))
+        .Times(1)
+        .WillOnce(Return(789))
+        .RetiresOnSaturation();
+
+    // k0 + ((x1 * k1) + (x2 * k2))
+    // k0 + (         789         ) -> -1
+    EXPECT_CALL(eq.k<0>(), Addition(789, ArgSide::Right))
+        .Times(1)
+        .WillOnce(Return(-1))
+        .RetiresOnSaturation();
+
+    EXPECT_EQ(-1, eq.Solve<false>(x1, x2));
   }
 
   {
+    // Exceptions are correctly forwarded and not intercepted
+    using testing::ReturnRef;
+    using testing::Throw;
+
+    testing::InSequence seq;
+    EXPECT_CALL(eq.k<2>(), Multiplication(321, ArgSide::Right))
+        .Times(2)
+        .WillOnce(Throw(std::runtime_error{"Hi !"}))
+        .WillOnce(ReturnRef(k1))
+        .RetiresOnSaturation();
+
+    EXPECT_CALL(eq.k<1>(), Multiplication(123, ArgSide::Right))
+        .Times(1)
+        .WillOnce(Throw(std::logic_error{"Hi !"}))
+        .RetiresOnSaturation();
+
+    EXPECT_THROW({ eq.Solve(123, 321); }, std::runtime_error);
+    EXPECT_THROW({ eq.Solve(123, 321); }, std::logic_error);
+  }
+
+  {
+    // We can use ignore to remove some x
     using testing::Return;
 
-    // (x1 * k1) -> -1
-    EXPECT_CALL(k1, Multiplication(x1, ArgSide::Left))
+    // (k1 * x1) -> -1
+    EXPECT_CALL(eq.k<1>(), Multiplication(x1, ArgSide::Right))
         .Times(1)
         .WillOnce(Return(-1))
         .RetiresOnSaturation();
 
-    // Solve<false>() transform (k1 * x1) to (x1 * k1)
-    // Ignored disable k0 and forwards only (x1 * k1)
-    EXPECT_EQ(-1, MakeLinearEquation(Ignored, std::cref(k1)).Solve<false>(x1));
+    // k0 + (k1 * x1)
+    // k0 + (  -1   ) -> 111
+    EXPECT_CALL(eq.k<0>(), Addition(-1, ArgSide::Right))
+        .Times(1)
+        .WillOnce(Return(111))
+        .RetiresOnSaturation();
 
-    // Ignored disable (k1 * x1) and forward only k0
-    EXPECT_EQ(1, MakeLinearEquation(1, std::cref(k1)).Solve(Ignored));
+    // Ignored disable x2, hence k2 not used
+    EXPECT_EQ(111, eq.Solve(x1, Ignored));
+  }
+
+  {
+    // We can use ignore to remove some K
+    using testing::Return;
+
+    auto partial_eq = ForwardAsLinearEquation(Ignored, k1, Ignored);
+
+    // (k1 * x1) -> -100
+    EXPECT_CALL(partial_eq.k<1>(), Multiplication(x1, ArgSide::Right))
+        .Times(1)
+        .WillOnce(Return(-100))
+        .RetiresOnSaturation();
+
+    EXPECT_EQ(-100, partial_eq.Solve(x1, x2));
   }
 }
 }  // namespace

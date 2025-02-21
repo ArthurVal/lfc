@@ -13,7 +13,7 @@ constexpr auto OffsetSequence(std::integer_sequence<T, Ints...>) noexcept {
  *  @return An std::integer_sequence<> representing a continous range of Size
  *          ints T, starting at Begin
  */
-template <class T, T Size, T Begin = 0>
+template <class T, T Size, T Begin = T{}>
 constexpr auto MakeSequence() noexcept {
   return OffsetSequence<T, Begin>(std::make_integer_sequence<T, Size>{});
 }
