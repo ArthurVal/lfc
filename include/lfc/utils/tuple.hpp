@@ -1,5 +1,6 @@
 #pragma once
 
+#include <functional>  // std::invoke
 #include <tuple>
 
 namespace lfc::utils {
@@ -17,7 +18,8 @@ constexpr auto Apply(F&& f, Tpl&& tpl) noexcept -> decltype(auto) {
   if constexpr (sizeof...(I) == 0) {
     return std::apply(std::forward<F>(f), std::forward<Tpl>(tpl));
   } else {
-    return f(std::get<I>(std::forward<Tpl>(tpl))...);
+    return std::invoke(std::forward<F>(f),
+                       std::get<I>(std::forward<Tpl>(tpl))...);
   }
 }
 
@@ -49,9 +51,11 @@ constexpr auto VisitTuple(Visitor&& v, Tpl&& tpl) noexcept -> void {
   constexpr auto DoCall = [](auto&& f, auto&& value, std::size_t i) {
     if constexpr (std::is_invocable_v<decltype(f), decltype(value),
                                       std::size_t>) {
-      f(std::forward<decltype(value)>(value), i);
+      std::invoke(std::forward<decltype(f)>(f),
+                  std::forward<decltype(value)>(value), i);
     } else if constexpr (std::is_invocable_v<decltype(f), decltype(value)>) {
-      f(std::forward<decltype(value)>(value));
+      std::invoke(std::forward<decltype(f)>(f),
+                  std::forward<decltype(value)>(value));
     } else {
       // Type not handled
     }
@@ -78,11 +82,12 @@ constexpr auto VisitTuple(Visitor&& v, Tpl&& tpl) noexcept -> void {
  */
 template <class T, class Tpl, class BinaryOp>
 constexpr auto ReduceTuple(BinaryOp&& f, Tpl&& tpl, T init = T{}) -> T {
-  return std::apply(
-      [&](auto&&... v) {
-        return ((init = f(init, std::forward<decltype(v)>(v))), ...);
+  VisitTuple(
+      [&init, &f](auto&& v) {
+        init = std::invoke(f, init, std::forward<decltype(v)>(v));
       },
       std::forward<Tpl>(tpl));
+  return init;
 }
 
 namespace details {
@@ -112,14 +117,14 @@ constexpr auto CallAtIndex(F&& f, Tpls&& tpls) {
 
   return std::apply(
       [&f](auto&&... tpl) {
-        return f(std::get<I>(std::forward<decltype(tpl)>(tpl))...);
+        return std::invoke(f, std::get<I>(std::forward<decltype(tpl)>(tpl))...);
       },
       std::forward<Tpls>(tpls));
 }
 
-template <std::size_t... I, class F, class Tpls>
-constexpr auto TransformTuplesImpl(std::index_sequence<I...>, F&& f,
-                                   Tpls&& tpls) {
+template <class F, class Tpls, std::size_t... I>
+constexpr auto TransformTuplesImpl(F&& f, Tpls&& tpls,
+                                   std::index_sequence<I...>) {
   // ... And unfold the indexes here
   return std::make_tuple(CallAtIndex<I>(f, tpls)...);
 }
@@ -151,9 +156,9 @@ constexpr auto TransformTuplesImpl(std::index_sequence<I...>, F&& f,
 template <class F, class... TplLikes>
 constexpr auto TransformTuples(F&& f, TplLikes&&... tpls) {
   return details::TransformTuplesImpl(
-      std::make_index_sequence<details::min(std::tuple_size_v<TplLikes>...)>{},
       std::forward<F>(f),
-      std::forward_as_tuple(std::forward<TplLikes>(tpls)...));
+      std::forward_as_tuple(std::forward<TplLikes>(tpls)...),
+      std::make_index_sequence<details::min(std::tuple_size_v<TplLikes>...)>{});
 }
 
 /**
