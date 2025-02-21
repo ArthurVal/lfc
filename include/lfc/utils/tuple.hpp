@@ -106,7 +106,7 @@ constexpr auto min(T0&& t0, T1&& t1, Tn&&... others) -> decltype(auto) {
 }
 
 template <std::size_t I, class F, class Tpls>
-constexpr auto CallAtIndex(F&& f, Tpls&& tpls) {
+constexpr auto TransformTuplesImpl(F&& f, Tpls&& tpls) {
   // Since we can't expand 2 packs at once (unless they have the same size), we
   // must use a trick in order to have only ONE pack active at time.
   //
@@ -125,7 +125,7 @@ template <class F, class Tpls, std::size_t... I>
 constexpr auto TransformTuplesImpl(F&& f, Tpls&& tpls,
                                    std::index_sequence<I...>) {
   // ... And unfold the indexes here
-  return std::make_tuple(CallAtIndex<I>(f, tpls)...);
+  return std::make_tuple(TransformTuplesImpl<I>(f, tpls)...);
 }
 
 }  // namespace details
