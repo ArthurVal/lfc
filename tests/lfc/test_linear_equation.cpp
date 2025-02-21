@@ -13,8 +13,8 @@ TEST(TestLinearEquation, Ignored) {
   using tests::ArgSide;
   using tests::ArithmeticMock;
 
-  EXPECT_EQ(3, (2 * Ignored{}) + 3);
-  EXPECT_EQ(4 + 3, 4 + Ignored{} + 3);
+  EXPECT_EQ(3, (2 * Ignored) + 3);
+  EXPECT_EQ(4 + 3, 4 + Ignored + 3);
 
   auto mock = StrictMock<ArithmeticMock<int, int>>{};
   {
@@ -26,12 +26,12 @@ TEST(TestLinearEquation, Ignored) {
         .WillOnce(Return(-2))
         .RetiresOnSaturation();
 
-    EXPECT_EQ(-1, (mock + Ignored{}) + 3);
-    EXPECT_EQ(-2, mock + (Ignored{} + 3));
+    EXPECT_EQ(-1, (mock + Ignored) + 3);
+    EXPECT_EQ(-2, mock + (Ignored + 3));
 
     // Mock ignored
-    EXPECT_EQ(3, (mock * Ignored{}) + 3);
-    EXPECT_EQ(3, (Ignored{} * mock) + 3);
+    EXPECT_EQ(3, (mock * Ignored) + 3);
+    EXPECT_EQ(3, (Ignored * mock) + 3);
   }
 }
 
@@ -386,11 +386,10 @@ TEST(TestLinearEquation, Solve) {
 
     // Solve<false>() transform (k1 * x1) to (x1 * k1)
     // Ignored disable k0 and forwards only (x1 * k1)
-    EXPECT_EQ(-1,
-              MakeLinearEquation(Ignored{}, std::cref(k1)).Solve<false>(x1));
+    EXPECT_EQ(-1, MakeLinearEquation(Ignored, std::cref(k1)).Solve<false>(x1));
 
     // Ignored disable (k1 * x1) and forward only k0
-    EXPECT_EQ(1, MakeLinearEquation(1, std::cref(k1)).Solve(Ignored{}));
+    EXPECT_EQ(1, MakeLinearEquation(1, std::cref(k1)).Solve(Ignored));
   }
 }
 }  // namespace

@@ -19,25 +19,27 @@ namespace lfc {
  *   Solve(x1, NotUsed{}, x3) -> K0 + (K1 * x1) + (K3 * x3),
  *   (K2 * x2) is ignored
  */
-struct Ignored {};
+struct Ignored_t {};
+
+constexpr auto Ignored = Ignored_t{};
 
 template <class T>
-constexpr auto operator*(Ignored, T&&) noexcept -> Ignored {
-  return Ignored{};
+constexpr auto operator*(Ignored_t, T&&) noexcept -> Ignored_t {
+  return Ignored;
 }
 
 template <class T>
-constexpr auto operator*(T&&, Ignored) noexcept -> Ignored {
-  return Ignored{};
+constexpr auto operator*(T&&, Ignored_t) noexcept -> Ignored_t {
+  return Ignored;
 }
 
 template <class T>
-constexpr auto operator+(Ignored, T&& v) noexcept -> T&& {
+constexpr auto operator+(Ignored_t, T&& v) noexcept -> T&& {
   return std::forward<T>(v);
 }
 
 template <class T>
-constexpr auto operator+(T&& v, Ignored) noexcept -> T&& {
+constexpr auto operator+(T&& v, Ignored_t) noexcept -> T&& {
   return std::forward<T>(v);
 }
 
