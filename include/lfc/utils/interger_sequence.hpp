@@ -4,40 +4,27 @@
 
 namespace lfc::utils {
 
-namespace details {
-
-/// Create a new integer_sequence offseted by N
-template <class T, T Offset, class IntSeq>
-struct OffsetIntegerSequenceBy;
-
 template <class T, T Offset, T... Ints>
-struct OffsetIntegerSequenceBy<T, Offset, std::integer_sequence<T, Ints...>> {
-  using type = std::integer_sequence<T, (Ints + Offset)...>;
-};
-
-template <class T, T Offset, class IntSeq>
-using OffsetIntegerSequenceBy_t =
-    typename OffsetIntegerSequenceBy<T, Offset, IntSeq>::type;
-
-}  // namespace details
+constexpr auto OffsetSequence(std::integer_sequence<T, Ints...>) noexcept {
+  return std::integer_sequence<T, (Offset + Ints)...>{};
+}
 
 /**
  *  @return An std::integer_sequence<> representing a continous range of Size
  *          ints T, starting at Begin
  */
-template <class T, T Begin, T Size>
-constexpr auto SliceOfInts() {
-  return details::OffsetIntegerSequenceBy_t<
-      T, Begin, std::make_integer_sequence<T, Size>>{};
+template <class T, T Size, T Begin = 0>
+constexpr auto MakeSequence() noexcept {
+  return OffsetSequence<T, Begin>(std::make_integer_sequence<T, Size>{});
 }
 
 /**
  *  @return An std::index_sequence<> representing a continous range of
  *          Size std::size_t, starting at Begin
  */
-template <std::size_t Begin, std::size_t Size>
-constexpr auto SliceOfIndex() {
-  return SliceOfInts<std::size_t, Begin, Size>();
+template <std::size_t Size, std::size_t Begin = 0>
+constexpr auto MakeIndexSequence() noexcept {
+  return MakeSequence<std::size_t, Size, Begin>();
 }
 
 }  // namespace lfc::utils

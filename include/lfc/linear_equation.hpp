@@ -3,9 +3,9 @@
 #include <type_traits>  // std::true/false_type
 #include <utility>      // std::forward
 
-#include "lfc/utils/interger_sequence.hpp"  // SliceOfIndex
+#include "lfc/utils/interger_sequence.hpp"  // MakeIndexSequence
 #include "lfc/utils/reference_wrapper.hpp"  // UnwrapRefWrapper_t
-#include "lfc/utils/tuple.hpp"              // ApplyOn
+#include "lfc/utils/tuple.hpp"              // Apply
 
 namespace lfc {
 
@@ -104,8 +104,9 @@ struct LinearEquation {
       return std::forward_as_tuple(std::forward<decltype(v)>(v)...);
     };
 
-    auto sublist_of_k = utils::Apply(ForwardElementsAsTuple, kn,
-                                     utils::SliceOfIndex<1, sizeof...(X)>());
+    auto sublist_of_k =
+        utils::Apply(ForwardElementsAsTuple, kn,
+                     utils::MakeIndexSequence<sizeof...(X), 1>());
 
     if constexpr (MultiplyRight) {
       return k<0>() + SolveImpl(std::make_index_sequence<sizeof...(X)>{},
