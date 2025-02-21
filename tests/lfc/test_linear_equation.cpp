@@ -233,50 +233,6 @@ TEST(TestLinearEquation, Forward) {
                      LinearEquation<int&&, char&&>>);
 }
 
-TEST(TestLinearEquation, ForEachCoefsDo) {
-  using testing::StrictMock;
-  using tests::CallableMock;
-
-  {
-    auto mock = StrictMock<CallableMock<void, int>>{};
-    using testing::Return;
-    EXPECT_CALL(mock, Call(1))
-        .Times(4)
-        .WillRepeatedly(Return())
-        .RetiresOnSaturation();
-    ForwardAsLinearEquation(1, 1, 1, 1).ForEachCoeffsDo(mock);
-  }
-
-  {
-    auto mock = StrictMock<CallableMock<void, const char*>>{};
-    using testing::Return;
-
-    EXPECT_CALL(mock, Call("Coucou"))
-        .Times(1)
-        .WillRepeatedly(Return())
-        .RetiresOnSaturation();
-
-    ForwardAsLinearEquation(1, 1, "Coucou", 1).ForEachCoeffsDo(mock);
-  }
-
-  {
-    auto mock = StrictMock<CallableMock<void, const char*, std::size_t>>{};
-    using testing::Return;
-
-    EXPECT_CALL(mock, Call(std::make_tuple("a", 1ul)))
-        .Times(1)
-        .WillRepeatedly(Return())
-        .RetiresOnSaturation();
-
-    EXPECT_CALL(mock, Call(std::make_tuple("Coucou", 3ul)))
-        .Times(1)
-        .WillRepeatedly(Return())
-        .RetiresOnSaturation();
-
-    ForwardAsLinearEquation(1, "a", 1, "Coucou", 1).ForEachCoeffsDo(mock);
-  }
-}
-
 TEST(TestLinearEquation, Solve) {
   using testing::StrictMock;
   using tests::ArgSide;

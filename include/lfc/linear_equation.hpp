@@ -143,38 +143,6 @@ struct LinearEquation {
     return std::get<N>(kn);
   }
 
-  /**
-   *  @brief Visit coefficients K of the linear equation
-   *
-   *  @tparam Visitor Use to visit the coefficients. Must be a callable
-   *                  with one of the following signature:
-   *                  - (K_t, std::size_t) -> void;
-   *                  - (K_t) -> void;
-   *
-   *  @param[in] v Visitor called for each coefficients 'k' of type K, if
-   *               'v(k)' is defined. Additionally, if 'v(k, std::size_t)' is
-   *               defined, called it with the index of k as second argument.
-   */
-  template <class Visitor>
-  constexpr auto ForEachCoeffsDo(Visitor&& v) & -> void {
-    ForEachImpl(*this, std::forward<Visitor>(v));
-  }
-
-  template <class Visitor>
-  constexpr auto ForEachCoeffsDo(Visitor&& v) const& -> void {
-    ForEachImpl(*this, std::forward<Visitor>(v));
-  }
-
-  template <class Visitor>
-  constexpr auto ForEachCoeffsDo(Visitor&& v) && -> void {
-    ForEachImpl(*this, std::forward<Visitor>(v));
-  }
-
-  template <class Visitor>
-  constexpr auto ForEachCoeffsDo(Visitor&& v) const&& -> void {
-    ForEachImpl(*this, std::forward<Visitor>(v));
-  }
-
  private:
   /**
    *  @brief Implementation of Solve, effectively doing a transform/reduce over
@@ -185,33 +153,6 @@ struct LinearEquation {
                                   RhsTpl&& rhs) {
     return (... + (std::get<I>(std::forward<LhsTpl>(lhs)) *
                    std::get<I>(std::forward<RhsTpl>(rhs))));
-  }
-
-  /**
-   *  @brief ForEachCoeffsDo generic implementation, taking care of all
-   *         references stuff (needed without deducing this from c++20)
-   */
-  template <class LinEq, class Visitor,
-            std::enable_if_t<details::IsLinearEquation_v<std::decay_t<LinEq>>,
-                             bool> = true>
-  static constexpr auto ForEachImpl(LinEq&& eq, Visitor&& v) -> void {
-    constexpr auto DoCall = [](auto&& f, auto&& k, std::size_t i) {
-      if constexpr (std::is_invocable_v<decltype(f), decltype(k),
-                                        std::size_t>) {
-        f(std::forward<decltype(k)>(k), i);
-      } else if constexpr (std::is_invocable_v<decltype(f), decltype(k)>) {
-        f(std::forward<decltype(k)>(k));
-      } else {
-        // Type of k not handled
-      }
-    };
-
-    utils::Apply(
-        [&](auto&&... k) {
-          std::size_t i = 0;
-          (DoCall(v, std::forward<decltype(k)>(k), i++), ...);
-        },
-        std::forward<LinEq>(eq).kn);
   }
 };
 
