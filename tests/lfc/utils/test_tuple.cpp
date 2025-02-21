@@ -28,6 +28,39 @@ TEST(TestTuple, Apply) {
   EXPECT_EQ((1 + 2 + 3), (Apply(DoSum, std::make_tuple(1, 2, 3))));
 }
 
+TEST(TestTuple, VisitTuple) {
+  {
+    std::size_t expected_i = 0;
+    int expected_v = -5;
+    VisitTuple(
+        [&](int v, std::size_t i) {
+          EXPECT_EQ(i, expected_i++);
+          EXPECT_EQ(v, expected_v++);
+        },
+        std::make_tuple(-5, -4, -3, -2, -1));
+  }
+
+  {
+    using tests::Overload;
+    VisitTuple(tests::Overload{
+                   [](std::string_view str, auto i) {
+                     EXPECT_EQ(str, "Coucou");
+                     EXPECT_EQ(i, 2);
+                   },
+                   [](int v, auto i) {
+                     EXPECT_EQ(v, 1);
+                     EXPECT_EQ(i, 0);
+                   },
+                   [](double v, auto i) {
+                     EXPECT_EQ(v, 3.14);
+                     EXPECT_EQ(i, 1);
+                   },
+                   [](auto) { FAIL(); },
+               },
+               std::make_tuple(1, 3.14, "Coucou"sv));
+  }
+}
+
 TEST(TestTuple, ReduceTuple) {
   EXPECT_EQ((5 + (1 + 1 + 1 + 1 + 1)),
             ReduceTuple(DoSum, std::make_tuple(1, 1, 1, 1, 1), 5));

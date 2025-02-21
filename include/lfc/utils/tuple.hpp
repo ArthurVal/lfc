@@ -32,6 +32,40 @@ constexpr auto Apply(F&& f, Tpl&& tpl,
 }
 
 /**
+ *  @brief Call v for each elements contained within tpl
+ *
+ *  @note When the visitors takes an std::size_t as 2nd argument, the index of
+ *        the element is forwarded with it
+ *
+ *  @note Silently ignore calling v when the visitor doesn't handle the given
+ *        type (i.e. v(T{}) is not defined)
+ *
+ *  @param[in] v Visitor call for each elements
+ *  @param[in] tpl Tuple like object
+ */
+template <class Visitor, class Tpl>
+constexpr auto VisitTuple(Visitor&& v, Tpl&& tpl) noexcept -> void {
+  /// Handle the call, based on v signature
+  constexpr auto DoCall = [](auto&& f, auto&& value, std::size_t i) {
+    if constexpr (std::is_invocable_v<decltype(f), decltype(value),
+                                      std::size_t>) {
+      f(std::forward<decltype(value)>(value), i);
+    } else if constexpr (std::is_invocable_v<decltype(f), decltype(value)>) {
+      f(std::forward<decltype(value)>(value));
+    } else {
+      // Type of k not handled
+    }
+  };
+
+  Apply(
+      [&](auto&&... values) -> void {
+        std::size_t i = 0;
+        (DoCall(v, std::forward<decltype(values)>(values), i++), ...);
+      },
+      std::forward<Tpl>(tpl));
+}
+
+/**
  *  @brief Reduce the given tuple, applying init = f(init, e) for each elements
  *         'e' of the given input tuple
  *
