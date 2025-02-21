@@ -22,8 +22,8 @@ TEST(TestTuple, Apply) {
             (Apply(Add, std::make_tuple(50, 1, 5, 4, 5452, "Coucou"),
                    MakeIndexSequence<3>())));
 
-  EXPECT_EQ((4 + 5452),
-            (Apply(Add, std::make_tuple(50, 1, 5, 4, 5452, "Coucou"),
+  EXPECT_EQ((4 * 5452),
+            (Apply(Mul, std::make_tuple(50, 1, 5, 4, 5452, "Coucou"),
                    MakeIndexSequence<2, 3>())));
 
   EXPECT_EQ((1 + 2 + 3), (Apply(Add, std::make_tuple(1, 2, 3))));
