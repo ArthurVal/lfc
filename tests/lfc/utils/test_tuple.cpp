@@ -31,34 +31,32 @@ TEST(TestTuple, Apply) {
 
 TEST(TestTuple, VisitTuple) {
   {
-    std::size_t expected_i = 0;
     int expected_v = -5;
-    VisitTuple(
-        [&](int v, std::size_t i) {
-          EXPECT_EQ(i, expected_i++);
+    VisitTuples([&](int v) { EXPECT_EQ(v, expected_v++); },
+                std::make_tuple(-5, -4, -3, -2, -1));
+  }
+
+  {
+    int expected_v = -5;
+    double expected_d = 5.;
+    VisitTuples(
+        [&](int v, double d) {
           EXPECT_EQ(v, expected_v++);
+          EXPECT_EQ(d, expected_d);
+          expected_d *= 2;
         },
-        std::make_tuple(-5, -4, -3, -2, -1));
+        std::make_tuple(-5, -4, -3, -2, -1), std::make_tuple(5., 10.));
   }
 
   {
     using tests::Overload;
-    VisitTuple(tests::Overload{
-                   [](std::string_view str, auto i) {
-                     EXPECT_EQ(str, "Coucou");
-                     EXPECT_EQ(i, 2);
-                   },
-                   [](int v, auto i) {
-                     EXPECT_EQ(v, 1);
-                     EXPECT_EQ(i, 0);
-                   },
-                   [](double v, auto i) {
-                     EXPECT_EQ(v, 3.14);
-                     EXPECT_EQ(i, 1);
-                   },
-                   [](auto) { FAIL(); },
-               },
-               std::make_tuple(1, 3.14, "Coucou"sv));
+    VisitTuples(tests::Overload{
+                    [](std::string_view str) { EXPECT_EQ(str, "Coucou"); },
+                    [](int v) { EXPECT_EQ(v, 1); },
+                    [](double v) { EXPECT_EQ(v, 3.14); },
+                    [](auto) { FAIL(); },
+                },
+                std::make_tuple(1, 3.14, "Coucou"sv));
   }
 }
 

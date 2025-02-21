@@ -33,40 +33,57 @@ constexpr auto Apply(F&& f, Tpl&& tpl,
   return Apply<I...>(std::forward<F>(f), std::forward<Tpl>(tpl));
 }
 
+namespace details {
+
+template <class T>
+constexpr auto min(T&& t) -> decltype(auto) {
+  return std::forward<T>(t);
+}
+
+template <class T0, class T1, class... Tn>
+constexpr auto min(T0&& t0, T1&& t1, Tn&&... others) -> decltype(auto) {
+  if (t0 < t1) {
+    return min(std::forward<T0>(t0), std::forward<Tn>(others)...);
+  } else {
+    return min(std::forward<T1>(t1), std::forward<Tn>(others)...);
+  }
+}
+
+/// Call v by selecting element I on all tuples contained within all_tpls
+template <std::size_t I, class Visitor, class AllTpls>
+constexpr auto VisitTuplesImpl(Visitor&& v,
+                               AllTpls&& all_tpls) noexcept -> void {
+  Apply(
+      [&](auto&&... tpls) {
+        std::invoke(std::forward<Visitor>(v),
+                    std::get<I>(std::forward<decltype(tpls)>(tpls))...);
+      },
+      std::forward<AllTpls>(all_tpls));
+}
+
+/// Call VisitTuplesImpl<I>() for each indexes I
+template <class Visitor, class TplOfTpls, std::size_t... I>
+constexpr auto VisitTuplesImpl(Visitor&& v, TplOfTpls&& all_tpls,
+                               std::index_sequence<I...>) noexcept -> void {
+  (VisitTuplesImpl<I>(v, all_tpls), ...);
+}
+
+}  // namespace details
+
 /**
- *  @brief Call v for each elements contained within tpl
+ *  @brief Call v(...) for each elements of the tpls
  *
- *  @note When the visitors takes an std::size_t as 2nd argument, the index of
- *        the element is forwarded with it
- *
- *  @note Silently ignore calling v when the visitor doesn't handle the given
- *        type (i.e. v(T{}) is not defined)
+ *  @note Takes the smallest tuple as reference to stop the visit
  *
  *  @param[in] v Visitor call for each elements
- *  @param[in] tpl Tuple like object
+ *  @param[in] tpls... Tuple like objects
  */
-template <class Visitor, class Tpl>
-constexpr auto VisitTuple(Visitor&& v, Tpl&& tpl) noexcept -> void {
-  /// Handle the call, based on v signature
-  constexpr auto DoCall = [](auto&& f, auto&& value, std::size_t i) {
-    if constexpr (std::is_invocable_v<decltype(f), decltype(value),
-                                      std::size_t>) {
-      std::invoke(std::forward<decltype(f)>(f),
-                  std::forward<decltype(value)>(value), i);
-    } else if constexpr (std::is_invocable_v<decltype(f), decltype(value)>) {
-      std::invoke(std::forward<decltype(f)>(f),
-                  std::forward<decltype(value)>(value));
-    } else {
-      // Type not handled
-    }
-  };
-
-  Apply(
-      [&](auto&&... values) -> void {
-        std::size_t i = 0;
-        (DoCall(v, std::forward<decltype(values)>(values), i++), ...);
-      },
-      std::forward<Tpl>(tpl));
+template <class Visitor, class... TplLikes>
+constexpr auto VisitTuples(Visitor&& v, TplLikes&&... tpls) noexcept -> void {
+  details::VisitTuplesImpl(
+      std::forward<Visitor>(v),
+      std::forward_as_tuple(std::forward<TplLikes>(tpls)...),
+      std::make_index_sequence<details::min(std::tuple_size_v<TplLikes>...)>{});
 }
 
 /**
@@ -82,7 +99,7 @@ constexpr auto VisitTuple(Visitor&& v, Tpl&& tpl) noexcept -> void {
  */
 template <class T, class Tpl, class BinaryOp>
 constexpr auto ReduceTuple(BinaryOp&& f, Tpl&& tpl, T init = T{}) -> T {
-  VisitTuple(
+  VisitTuples(
       [&init, &f](auto&& v) {
         init = std::invoke(f, init, std::forward<decltype(v)>(v));
       },
@@ -91,19 +108,6 @@ constexpr auto ReduceTuple(BinaryOp&& f, Tpl&& tpl, T init = T{}) -> T {
 }
 
 namespace details {
-
-template <class T0, class T1, class... Tn>
-constexpr auto min(T0&& t0, T1&& t1, Tn&&... others) -> decltype(auto) {
-  if constexpr (sizeof...(Tn) == 0) {
-    return t0 < t1 ? std::forward<T0>(t0) : std::forward<T1>(t1);
-  } else {
-    if (t0 < t1) {
-      return min(std::forward<T0>(t0), std::forward<Tn>(others)...);
-    } else {
-      return min(std::forward<T1>(t1), std::forward<Tn>(others)...);
-    }
-  }
-}
 
 template <std::size_t I, class F, class Tpls>
 constexpr auto TransformTuplesImpl(F&& f, Tpls&& tpls) {
