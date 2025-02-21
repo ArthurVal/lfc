@@ -5,7 +5,7 @@
 namespace lfc::utils {
 
 /**
- *  @brief Call f with the elements of tpl filters by indexes I
+ *  @brief Call f with the elements of tpl filtered by indexes I
  *
  *  @note Same as std::apply but with a subset of elements
  *
