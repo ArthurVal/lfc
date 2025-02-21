@@ -53,7 +53,7 @@ constexpr auto VisitTuple(Visitor&& v, Tpl&& tpl) noexcept -> void {
     } else if constexpr (std::is_invocable_v<decltype(f), decltype(value)>) {
       f(std::forward<decltype(value)>(value));
     } else {
-      // Type of k not handled
+      // Type not handled
     }
   };
 

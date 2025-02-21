@@ -104,18 +104,20 @@ struct LinearEquation {
       return std::forward_as_tuple(std::forward<decltype(v)>(v)...);
     };
 
-    auto sublist_of_k =
+    // Generates a sub tuple of size 'sizeof...(X)', excluding k0, that points
+    // to each elements of kn
+    auto sub_tuple_view =
         utils::Apply(ForwardElementsAsTuple, kn,
                      utils::MakeIndexSequence<sizeof...(X), 1>());
 
     if constexpr (MultiplyRight) {
       return k<0>() + SolveImpl(std::make_index_sequence<sizeof...(X)>{},
-                                sublist_of_k,
+                                sub_tuple_view,
                                 std::forward_as_tuple(std::forward<X>(x)...));
     } else {
       return k<0>() + SolveImpl(std::make_index_sequence<sizeof...(X)>{},
                                 std::forward_as_tuple(std::forward<X>(x)...),
-                                sublist_of_k);
+                                sub_tuple_view);
     }
   }
 
