@@ -22,7 +22,8 @@ constexpr auto ApplyOn(F&& f, Tpl&& tpl) noexcept -> decltype(auto) {
  *         argument to automatically deduce indexes
  */
 template <std::size_t... I, class F, class Tpl>
-constexpr auto ApplyOn(std::index_sequence<I...>, F&& f, Tpl&& tpl) noexcept {
+constexpr auto ApplyOn(std::index_sequence<I...>, F&& f,
+                       Tpl&& tpl) noexcept -> decltype(auto) {
   return ApplyOn<I...>(std::forward<F>(f), std::forward<Tpl>(tpl));
 }
 
