@@ -10,22 +10,23 @@ using namespace std::literals::string_view_literals;
 namespace lfc::utils {
 namespace {
 
-constexpr auto DoSum = [](auto&&... v) { return (... + v); };
+constexpr auto Add = [](auto&&... v) { return (... + v); };
+constexpr auto Mul = [](auto&&... v) { return (... * v); };
 
 TEST(TestTuple, Apply) {
   EXPECT_EQ(
       (1 + 5 + 4),
-      (Apply<1, 2, 3>(DoSum, std::make_tuple(50, 1, 5, 4, 5452, "Coucou"))));
+      (Apply<1, 2, 3>(Add, std::make_tuple(50, 1, 5, 4, 5452, "Coucou"))));
 
   EXPECT_EQ(50 + 1 + 5,
-            (Apply(DoSum, std::make_tuple(50, 1, 5, 4, 5452, "Coucou"),
+            (Apply(Add, std::make_tuple(50, 1, 5, 4, 5452, "Coucou"),
                    MakeIndexSequence<3>())));
 
   EXPECT_EQ((4 + 5452),
-            (Apply(DoSum, std::make_tuple(50, 1, 5, 4, 5452, "Coucou"),
+            (Apply(Add, std::make_tuple(50, 1, 5, 4, 5452, "Coucou"),
                    MakeIndexSequence<2, 3>())));
 
-  EXPECT_EQ((1 + 2 + 3), (Apply(DoSum, std::make_tuple(1, 2, 3))));
+  EXPECT_EQ((1 + 2 + 3), (Apply(Add, std::make_tuple(1, 2, 3))));
 }
 
 TEST(TestTuple, VisitTuple) {
@@ -73,16 +74,16 @@ struct Accumulator {
 
 TEST(TestTuple, ReduceTuple) {
   EXPECT_EQ((5 + (1 + 1 + 1 + 1 + 1)),
-            ReduceTuple(DoSum, std::make_tuple(1, 1, 1, 1, 1), 5));
+            ReduceTuple(Add, std::make_tuple(1, 1, 1, 1, 1), 5));
 
   using tests::Overload;
   EXPECT_EQ((1 + 1 + "Coucou"sv.size() + 1 + 1),
             ReduceTuple<std::size_t>(
                 Overload{
-                    [](std::size_t init, int v) { return init + v; },
                     [](std::size_t init, std::string_view v) {
                       return init + v.size();
                     },
+                    Add,
                 },
                 std::make_tuple(1, 1, "Coucou"sv, 1, 1)));
 
@@ -107,23 +108,20 @@ TEST(TestTuple, ReduceTuple) {
 TEST(TestTuple, TransformTuple) {
   EXPECT_EQ(
       std::make_tuple(3, 3, 3),
-      TransformTuples([](auto lhs, auto rhs) { return lhs + rhs; },
-                      std::make_tuple(1, 1, 1), std::make_tuple(2, 2, 2)));
-
-  EXPECT_EQ(std::make_tuple(6, 7, 8),
-            TransformTuples([](auto... v) { return (... + v); },
-                            std::make_tuple(1, 2, 3), std::make_tuple(2, 2, 2),
-                            std::make_tuple(3, 3, 3)));
-
-  EXPECT_EQ(std::make_tuple(3, 3),
-            TransformTuples([](auto lhs, auto rhs) { return lhs + rhs; },
-                            std::make_tuple(1, 1, 1, 1, 1, 1, 1),
-                            std::make_tuple(2, 2)));
+      TransformTuples(Add, std::make_tuple(1, 1, 1), std::make_tuple(2, 2, 2)));
 
   EXPECT_EQ(
-      std::make_tuple(3),
-      TransformTuples([](auto lhs, auto rhs) { return lhs + rhs; },
-                      std::make_tuple(1), std::make_tuple(2, 2, 2, 2, 2, 2)));
+      std::make_tuple(6, 7, 8),
+      TransformTuples(Add, std::make_tuple(1, 2, 3), std::make_tuple(2, 2, 2),
+                      std::make_tuple(3, 3, 3)));
+
+  EXPECT_EQ(std::make_tuple(3, 3),
+            TransformTuples(Add, std::make_tuple(1, 1, 1, 1, 1, 1, 1),
+                            std::make_tuple(2, 2)));
+
+  EXPECT_EQ(std::make_tuple(3),
+            TransformTuples(Add, std::make_tuple(1),
+                            std::make_tuple(2, 2, 2, 2, 2, 2)));
 
   using tests::Overload;
   EXPECT_EQ(std::make_tuple("Foo Bar"sv, 0, 3.14),
@@ -145,9 +143,6 @@ TEST(TestTuple, TransformTuple) {
 }
 
 TEST(TestTuple, TransformReduceTuples) {
-  constexpr auto Add = [](auto... v) { return (... + v); };
-  constexpr auto Mul = [](auto... v) { return (... * v); };
-
   EXPECT_EQ((10 + (2 * 1) + (4 * 3)),
             TransformReduceTuples(10, Add, Mul, std::make_tuple(2, 4, 6),
                                   std::make_tuple(1, 3)));
