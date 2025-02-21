@@ -14,7 +14,7 @@ constexpr auto DoSum = [](auto&&... v) { return (... + v); };
 
 TEST(TestTuple, Apply) {
   EXPECT_EQ(
-      1 + 5 + 4,
+      (1 + 5 + 4),
       (Apply<1, 2, 3>(DoSum, std::make_tuple(50, 1, 5, 4, 5452, "Coucou"))));
 
   EXPECT_EQ(50 + 1 + 5, (Apply(std::make_index_sequence<3>{}, DoSum,
@@ -27,18 +27,19 @@ TEST(TestTuple, Apply) {
 }
 
 TEST(TestTuple, ReduceTuple) {
-  EXPECT_EQ(10, ReduceTuple([](auto lhs, auto rhs) { return lhs + rhs; },
-                            std::make_tuple(1, 1, 1, 1, 1), 5));
+  EXPECT_EQ((5 + (1 + 1 + 1 + 1 + 1)),
+            ReduceTuple(DoSum, std::make_tuple(1, 1, 1, 1, 1), 5));
 
   using tests::Overload;
-  EXPECT_EQ(4 + 6, ReduceTuple<std::size_t>(
-                       Overload{
-                           [](std::size_t init, int v) { return init + v; },
-                           [](std::size_t init, std::string_view v) {
-                             return init + v.size();
-                           },
-                       },
-                       std::make_tuple(1, 1, "Coucou"sv, 1, 1)));
+  EXPECT_EQ((1 + 1 + "Coucou"sv.size() + 1 + 1),
+            ReduceTuple<std::size_t>(
+                Overload{
+                    [](std::size_t init, int v) { return init + v; },
+                    [](std::size_t init, std::string_view v) {
+                      return init + v.size();
+                    },
+                },
+                std::make_tuple(1, 1, "Coucou"sv, 1, 1)));
 }
 
 TEST(TestTuple, TransformTuple) {
