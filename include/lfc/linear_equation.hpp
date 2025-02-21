@@ -104,17 +104,17 @@ struct LinearEquation {
       return std::forward_as_tuple(std::forward<decltype(v)>(v)...);
     };
 
-    auto&& coeffs = utils::ApplyOn(utils::SliceOfIndex<1, sizeof...(X)>(),
-                                   ForwardElementsAsTuple, kn);
+    auto sublist_of_k = utils::ApplyOn(utils::SliceOfIndex<1, sizeof...(X)>(),
+                                       ForwardElementsAsTuple, kn);
 
     if constexpr (MultiplyRight) {
       return k<0>() + SolveImpl(std::make_index_sequence<sizeof...(X)>{},
-                                std::forward<decltype(coeffs)>(coeffs),
+                                sublist_of_k,
                                 std::forward_as_tuple(std::forward<X>(x)...));
     } else {
       return k<0>() + SolveImpl(std::make_index_sequence<sizeof...(X)>{},
                                 std::forward_as_tuple(std::forward<X>(x)...),
-                                std::forward<decltype(coeffs)>(coeffs));
+                                sublist_of_k);
     }
   }
 
