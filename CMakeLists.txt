@@ -1,3 +1,4 @@
+
 # From ROS2 - HUMBLE
 cmake_minimum_required(VERSION 3.22)
 
@@ -7,10 +8,9 @@ project(lfc
   LANGUAGES CXX
 )
 
-include(cmake/DisableInSourceBuilds.cmake)
-
-include(CMakePrintHelpers)
-include(GNUInstallDirs)
+include(cmake/utils.cmake)
+utils_disable_in_source_builds()
+utils_if_build_type_missing(DEFAULT_TO Release)
 
 configure_file(
   include/${PROJECT_NAME}/version.h.in
