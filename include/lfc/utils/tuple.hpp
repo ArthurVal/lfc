@@ -6,7 +6,7 @@
 namespace lfc::utils {
 
 /**
- *  @brief Call f with the elements of tpl filtered by indexes I
+ *  @brief Invoke f with the elements of tpl filtered by indexes I
  *
  *  @note Same as std::apply but can be called with a subset of elements
  *
@@ -49,29 +49,50 @@ constexpr auto min(T0&& t0, T1&& t1, Tn&&... others) -> decltype(auto) {
   }
 }
 
-/// Call v by selecting element I on all tuples contained within all_tpls
-template <std::size_t I, class Visitor, class AllTpls>
-constexpr auto VisitTuplesImpl(Visitor&& v,
-                               AllTpls&& all_tpls) noexcept -> void {
-  Apply(
-      [&](auto&&... tpls) {
-        std::invoke(std::forward<Visitor>(v),
-                    std::get<I>(std::forward<decltype(tpls)>(tpls))...);
-      },
-      std::forward<AllTpls>(all_tpls));
-}
-
-/// Call VisitTuplesImpl<I>() for each indexes I
-template <std::size_t... I, class Visitor, class TplOfTpls>
-constexpr auto VisitTuplesImpl(std::index_sequence<I...>, Visitor&& v,
-                               TplOfTpls&& all_tpls) noexcept -> void {
-  (VisitTuplesImpl<I>(v, all_tpls), ...);
-}
-
 }  // namespace details
 
 /**
- *  @brief Call v(...) for each elements of the tpls
+ *  @brief Invoke v(std::get<I>(tpls)...) for each elements Ith of all tpls
+ *
+ *  @param[in] v Visitor call for each elements
+ *  @param[in] tpls... Tuple like objects
+ */
+template <std::size_t I, std::size_t... Others, class Visitor,
+          class... TplLikes>
+constexpr auto VisitTuples(Visitor&& v, TplLikes&&... tpls) noexcept -> void {
+  static_assert(I < details::min(std::tuple_size_v<TplLikes>...),
+                "Out of bound tuple index access");
+
+  std::invoke(std::forward<Visitor>(v),
+              std::get<I>(std::forward<decltype(tpls)>(tpls))...);
+
+  if constexpr (sizeof...(Others) != 0) {
+    VisitTuples<Others...>(std::forward<Visitor>(v),
+                           std::forward<TplLikes>(tpls)...);
+  }
+}
+
+/**
+ *  @brief Invoke v(std::get<I>(tpls)...) for each elements Ith of all tpls
+ *
+ *  @note Same as VisitTuples<I...>(v, tpls...) using an index_sequence helper
+ *        as argument to automatically deduce indexes
+ *  @note No-op when sizeof...(I)  is 0
+ *
+ *  @param[in] v Visitor call for each elements
+ *  @param[in] tpls... Tuple like objects
+ */
+template <class Visitor, class... TplLikes, std::size_t... I>
+constexpr auto VisitTuples(std::index_sequence<I...>, Visitor&& v,
+                           TplLikes&&... tpls) noexcept -> void {
+  if constexpr (sizeof...(I) >= 1) {
+    VisitTuples<I...>(std::forward<Visitor>(v),
+                      std::forward<TplLikes>(tpls)...);
+  }
+}
+
+/**
+ *  @brief Invoke v(...) for each elements of all tpls
  *
  *  @note Takes the smallest tuple as reference to stop the visit
  *
@@ -80,10 +101,9 @@ constexpr auto VisitTuplesImpl(std::index_sequence<I...>, Visitor&& v,
  */
 template <class Visitor, class... TplLikes>
 constexpr auto VisitTuples(Visitor&& v, TplLikes&&... tpls) noexcept -> void {
-  details::VisitTuplesImpl(
-      std::make_index_sequence<details::min(std::tuple_size_v<TplLikes>...)>{},
-      std::forward<Visitor>(v),
-      std::forward_as_tuple(std::forward<TplLikes>(tpls)...));
+  constexpr auto smallest_size = details::min(std::tuple_size_v<TplLikes>...);
+  VisitTuples(std::make_index_sequence<smallest_size>{},
+              std::forward<Visitor>(v), std::forward<TplLikes>(tpls)...);
 }
 
 /**

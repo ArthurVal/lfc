@@ -38,12 +38,38 @@ TEST(TestTuple, VisitTuple) {
 
   {
     int expected_v = -5;
+    VisitTuples<0, 2, 4>(
+        [&](int v) {
+          EXPECT_EQ(v, expected_v);
+          expected_v += 2;
+        },
+        std::make_tuple(-5, -4, -3, -2, -1));
+  }
+
+  {
+    int expected_v = -5;
     double expected_d = 5.;
     VisitTuples(
         [&](int v, double d) {
           EXPECT_EQ(v, expected_v++);
           EXPECT_EQ(d, expected_d);
           expected_d *= 2;
+        },
+        std::make_tuple(-5, -4, -3, -2, -1), std::make_tuple(5., 10.));
+  }
+
+  {
+    VisitTuples<1>(
+        [&](int i, double d) {
+          EXPECT_EQ(i, -4);
+          EXPECT_EQ(d, 10.);
+        },
+        std::make_tuple(-5, -4, -3, -2, -1), std::make_tuple(5., 10.));
+
+    VisitTuples<1, 1, 1, 1>(
+        [&](int i, double d) {
+          EXPECT_EQ(i, -4);
+          EXPECT_EQ(d, 10.);
         },
         std::make_tuple(-5, -4, -3, -2, -1), std::make_tuple(5., 10.));
   }
