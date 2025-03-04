@@ -110,15 +110,15 @@ constexpr auto VisitTuples(Visitor&& v, TplLikes&&... tpls) noexcept -> void {
  *  @brief Reduce the given tuple, applying init = f(init, e) for each elements
  *         'e' of the given input tuple
  *
+ *  @param[in] init The initial value containing the reduced value
  *  @param[in] f A binary operator called with the following signature:
  *               f(T, tuple_element_t<I>) -> T for each elements I of the tuple;
  *  @param[in] tpl The tuple we wish to reduce
- *  @param[in] init The initial value containing the reduced value
  *
  *  @return T Result of the reduction operation
  */
-template <class BinaryOp, class T, class Tpl>
-constexpr auto ReduceTuple(BinaryOp&& f, T init, Tpl&& tpl) -> T {
+template <class T, class BinaryOp, class Tpl>
+constexpr auto ReduceTuple(T init, BinaryOp&& f, Tpl&& tpl) -> T {
   VisitTuples(
       [&init, &f](auto&& v) {
         init = std::invoke(f, init, std::forward<decltype(v)>(v));
@@ -206,17 +206,17 @@ constexpr auto TransformTuples(F&& f, TplLikes&&... tpls) {
  *
  *  With N being the size of the smallest tuple (Tuple B in this example).
  *
- *  @param[in] r The reduction operator
  *  @param[in] init The initial value containing the reduced value
+ *  @param[in] r The reduction operator
  *  @param[in] t The transform operator
  *  @param[in] tpls... All tuples we wish to transform
  *
  *  @return T Result of the reduction operation, follwing the transformation
  */
-template <class ReduceOp, class T, class TransformOp, class... TplLikes>
-constexpr auto TransformReduceTuples(ReduceOp&& r, T init, TransformOp&& t,
+template <class T, class ReduceOp, class TransformOp, class... TplLikes>
+constexpr auto TransformReduceTuples(T init, ReduceOp&& r, TransformOp&& t,
                                      TplLikes&&... tpls) {
-  return ReduceTuple(std::forward<ReduceOp>(r), std::move(init),
+  return ReduceTuple(std::move(init), std::forward<ReduceOp>(r),
                      TransformTuples(std::forward<TransformOp>(t),
                                      std::forward<TplLikes>(tpls)...));
 }
