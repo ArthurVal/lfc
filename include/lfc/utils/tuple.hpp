@@ -211,7 +211,7 @@ constexpr auto TransformTuples(F&& f, TplLikes&&... tpls) {
  *  @param[in] t The transform operator
  *  @param[in] tpls... All tuples we wish to transform
  *
- *  @return T Result of the reduction operation, follwing the transformation
+ *  @return T Result of the reduction operation, following the transformation
  */
 template <class T, class ReduceOp, class TransformOp, class... TplLikes>
 constexpr auto TransformReduceTuples(T init, ReduceOp&& r, TransformOp&& t,
