@@ -98,24 +98,24 @@ struct Accumulator {
 
 TEST(TestTuple, ReduceTuple) {
   EXPECT_EQ((5 + (1 + 1 + 1 + 1 + 1)),
-            ReduceTuple(Add, std::make_tuple(1, 1, 1, 1, 1), 5));
+            ReduceTuple(Add, 5, std::make_tuple(1, 1, 1, 1, 1)));
 
   using tests::Overload;
   EXPECT_EQ((1 + 1 + "Coucou"sv.size() + 1 + 1),
-            ReduceTuple<std::size_t>(
+            ReduceTuple(
                 Overload{
                     [](std::size_t init, std::string_view v) {
                       return init + v.size();
                     },
                     Add,
                 },
-                std::make_tuple(1, 1, "Coucou"sv, 1, 1)));
+                0ul, std::make_tuple(1, 1, "Coucou"sv, 1, 1)));
 
   // We can do some weird stuff ...
   auto acc = Accumulator<int>{3};
 
-  EXPECT_EQ(ReduceTuple(&Accumulator<int>::Add,
-                        std::make_tuple(5, 3, 0, 5, -100), acc)
+  EXPECT_EQ(ReduceTuple(&Accumulator<int>::Add, acc,
+                        std::make_tuple(5, 3, 0, 5, -100))
                 .accumulated,
             (3 + (5 + 3 + 0 + 5 - 100)));
 
@@ -123,8 +123,8 @@ TEST(TestTuple, ReduceTuple) {
   EXPECT_EQ(acc.accumulated, 3);
 
   // ... But we can use std::ref
-  ReduceTuple(&Accumulator<int>::Add, std::make_tuple(5, 3, 0, 5, -100),
-              std::ref(acc));
+  ReduceTuple(&Accumulator<int>::Add, std::ref(acc),
+              std::make_tuple(5, 3, 0, 5, -100));
 
   EXPECT_EQ(acc.accumulated, (3 + (5 + 3 + 0 + 5 - 100)));
 }
@@ -168,12 +168,12 @@ TEST(TestTuple, TransformTuple) {
 
 TEST(TestTuple, TransformReduceTuples) {
   EXPECT_EQ((10 + (2 * 1) + (4 * 3)),
-            TransformReduceTuples(10, Add, Mul, std::make_tuple(2, 4, 6),
+            TransformReduceTuples(Add, 10, Mul, std::make_tuple(2, 4, 6),
                                   std::make_tuple(1, 3)));
 
   EXPECT_EQ(
       (20 * (2 + 1 - 1) * (4 + 3 - 5)),
-      TransformReduceTuples(20, Mul, Add, std::make_tuple(2, 4, 8),
+      TransformReduceTuples(Mul, 20, Add, std::make_tuple(2, 4, 8),
                             std::make_tuple(1, 3), std::make_tuple(-1, -5)));
 }
 

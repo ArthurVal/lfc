@@ -117,8 +117,8 @@ constexpr auto VisitTuples(Visitor&& v, TplLikes&&... tpls) noexcept -> void {
  *
  *  @return T Result of the reduction operation
  */
-template <class T, class Tpl, class BinaryOp>
-constexpr auto ReduceTuple(BinaryOp&& f, Tpl&& tpl, T init = T{}) -> T {
+template <class BinaryOp, class T, class Tpl>
+constexpr auto ReduceTuple(BinaryOp&& f, T init, Tpl&& tpl) -> T {
   VisitTuples(
       [&init, &f](auto&& v) {
         init = std::invoke(f, init, std::forward<decltype(v)>(v));
@@ -213,13 +213,12 @@ constexpr auto TransformTuples(F&& f, TplLikes&&... tpls) {
  *
  *  @return T Result of the reduction operation, follwing the transformation
  */
-template <class T, class ReduceOp, class TransformOp, class... TplLikes>
-constexpr auto TransformReduceTuples(T init, ReduceOp&& r, TransformOp&& t,
+template <class ReduceOp, class T, class TransformOp, class... TplLikes>
+constexpr auto TransformReduceTuples(ReduceOp&& r, T init, TransformOp&& t,
                                      TplLikes&&... tpls) {
-  return ReduceTuple(std::forward<ReduceOp>(r),
+  return ReduceTuple(std::forward<ReduceOp>(r), std::move(init),
                      TransformTuples(std::forward<TransformOp>(t),
-                                     std::forward<TplLikes>(tpls)...),
-                     std::move(init));
+                                     std::forward<TplLikes>(tpls)...));
 }
 
 }  // namespace lfc::utils
