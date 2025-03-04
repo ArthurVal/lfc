@@ -62,9 +62,9 @@ constexpr auto VisitTuplesImpl(Visitor&& v,
 }
 
 /// Call VisitTuplesImpl<I>() for each indexes I
-template <class Visitor, class TplOfTpls, std::size_t... I>
-constexpr auto VisitTuplesImpl(Visitor&& v, TplOfTpls&& all_tpls,
-                               std::index_sequence<I...>) noexcept -> void {
+template <std::size_t... I, class Visitor, class TplOfTpls>
+constexpr auto VisitTuplesImpl(std::index_sequence<I...>, Visitor&& v,
+                               TplOfTpls&& all_tpls) noexcept -> void {
   (VisitTuplesImpl<I>(v, all_tpls), ...);
 }
 
@@ -81,9 +81,9 @@ constexpr auto VisitTuplesImpl(Visitor&& v, TplOfTpls&& all_tpls,
 template <class Visitor, class... TplLikes>
 constexpr auto VisitTuples(Visitor&& v, TplLikes&&... tpls) noexcept -> void {
   details::VisitTuplesImpl(
+      std::make_index_sequence<details::min(std::tuple_size_v<TplLikes>...)>{},
       std::forward<Visitor>(v),
-      std::forward_as_tuple(std::forward<TplLikes>(tpls)...),
-      std::make_index_sequence<details::min(std::tuple_size_v<TplLikes>...)>{});
+      std::forward_as_tuple(std::forward<TplLikes>(tpls)...));
 }
 
 /**
