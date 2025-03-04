@@ -164,10 +164,10 @@ constexpr auto TransformTuplesImpl(F&& f, Tpls&& tpls,
  *   [A_2]    [B_2]   ...   [M_2]  -> f(A_2, B_2, ..., M_2) -> [R_2]
  *    ...      ...    ...    ...   -> f(..., ..., ..., ...) ->  ...
  *   [A_N]    [B_N]   ...   [M_N]  -> f(A_N, B_N, ..., M_N) -> [R_N]
- *   [A_N+1]  [B_N+1] ...
- *    ...      ...
+ *   [A_N+1]          ...   [M_N+1]
+ *    ...                   ...
  *
- *  With N being the size of the smallest tuple (in this example M).
+ *  With N being the size of the smallest tuple (Tuple B in this example).
  *
 
  *  @param[in] f An operator called with each tuples elements
@@ -193,9 +193,9 @@ constexpr auto TransformTuples(F&& f, TplLikes&&... tpls) {
  *   [A_2]    [B_2]   ...   [M_2]  -> t(A_2, B_2, ..., M_2) -> [R_2]
  *    ...      ...    ...    ...   -> t(..., ..., ..., ...) ->  ...
  *   [A_N]    [B_N]   ...   [M_N]  -> t(A_N, B_N, ..., M_N) -> [R_N]
- *   [A_N+1]  [B_N+1] ...
- *    ...      ...                                               |
- *    ...      ...                                               V
+ *   [A_N+1]          ...   [M_N+1]
+ *    ...                    ...                                 |
+ *    ...                    ...                                 V
  *                                                |  init = r(init, [R_1])
  *                                         REDUCE |  init = r(init, [R_2])
  *                                                |           ...
@@ -204,10 +204,10 @@ constexpr auto TransformTuples(F&& f, TplLikes&&... tpls) {
  *                                                               V
  *                                                             init
  *
- *  With N being the size of the smallest tuple (in this example M).
+ *  With N being the size of the smallest tuple (Tuple B in this example).
  *
- *  @param[in] init The initial value containing the reduced value
  *  @param[in] r The reduction operator
+ *  @param[in] init The initial value containing the reduced value
  *  @param[in] t The transform operator
  *  @param[in] tpls... All tuples we wish to transform
  *
