@@ -10,6 +10,8 @@ namespace lfc::utils {
  *
  *  @note Same as std::apply but can be called with a subset of elements
  *
+ *  @tparam I... Indexes selecting elements inside input tuple
+ *
  *  @param[in] f Callable taking all the Ith elements of tpl as arguments
  *  @param[in] tpl Tuple like object
  */
@@ -24,7 +26,7 @@ constexpr auto Apply(F&& f, Tpl&& tpl) noexcept -> decltype(auto) {
 }
 
 /**
- *  @brief Same as Apply(f, tpl) using an index_sequence helper as
+ *  @brief Same as Apply<I...>(f, tpl) using an index_sequence helper as
  *         argument to automatically deduce indexes
  */
 template <class F, class Tpl, std::size_t... I>
@@ -54,13 +56,15 @@ constexpr auto min(T0&& t0, T1&& t1, Tn&&... others) -> decltype(auto) {
 /**
  *  @brief Invoke v(std::get<I>(tpls)...) for each elements Ith of all tpls
  *
+ *  @tparam I... Indexes selecting elements inside input tuples
+ *
  *  @param[in] v Visitor call for each elements
  *  @param[in] tpls... Tuple like objects
  */
 template <std::size_t I, std::size_t... Others, class Visitor,
           class... TplLikes>
 constexpr auto VisitTuples(Visitor&& v, TplLikes&&... tpls) noexcept -> void {
-  static_assert(I < details::min(std::tuple_size_v<TplLikes>...),
+  static_assert(I < details::min(std::tuple_size_v<std::decay_t<TplLikes>>...),
                 "Out of bound tuple index access");
 
   std::invoke(std::forward<Visitor>(v),
@@ -101,7 +105,9 @@ constexpr auto VisitTuples(std::index_sequence<I...>, Visitor&& v,
  */
 template <class Visitor, class... TplLikes>
 constexpr auto VisitTuples(Visitor&& v, TplLikes&&... tpls) noexcept -> void {
-  constexpr auto smallest_size = details::min(std::tuple_size_v<TplLikes>...);
+  constexpr auto smallest_size =
+      details::min(std::tuple_size_v<std::decay_t<TplLikes>>...);
+
   VisitTuples(std::make_index_sequence<smallest_size>{},
               std::forward<Visitor>(v), std::forward<TplLikes>(tpls)...);
 }
@@ -127,61 +133,82 @@ constexpr auto ReduceTuple(T init, BinaryOp&& f, Tpl&& tpl) -> T {
   return init;
 }
 
-namespace details {
-
-template <std::size_t I, class F, class Tpls>
-constexpr auto TransformTuplesImpl(F&& f, Tpls&& tpls) {
-  // Since we can't expand 2 packs at once (unless they have the same size), we
-  // must use a trick in order to have only ONE pack active at time.
-  //
-  // Here, the tuple pack is forwarded as tuple<tpl ...> and the a SINGLE index
-  // is forwarded to this function.
-  // Hence we can unfold the tuple pack for a given index I...
-
-  return std::apply(
-      [&f](auto&&... tpl) {
-        return std::invoke(f, std::get<I>(std::forward<decltype(tpl)>(tpl))...);
-      },
-      std::forward<Tpls>(tpls));
-}
-
-template <class F, class Tpls, std::size_t... I>
-constexpr auto TransformTuplesImpl(F&& f, Tpls&& tpls,
-                                   std::index_sequence<I...>) {
-  // ... And unfold the indexes here
-  return std::make_tuple(TransformTuplesImpl<I>(f, tpls)...);
-}
-
-}  // namespace details
-
 /**
- *  @brief Create a new tuple containing the tranformation F(...) called by
- *         iterating in parallele over all input tuples
+ *  @brief Create a new tuple containing the result of invoking F(...) over all
+ *         input tuples for each Ith elements sequentially
  *
- *  Correspond to the following:
- *  Tuple A  Tuple B  ...  Tuple M                             Result (size N)
- *   [A_1]    [B_1]   ...   [M_1]  -> f(A_1, B_1, ..., M_1) -> [R_1]
- *   [A_2]    [B_2]   ...   [M_2]  -> f(A_2, B_2, ..., M_2) -> [R_2]
- *    ...      ...    ...    ...   -> f(..., ..., ..., ...) ->  ...
- *   [A_N]    [B_N]   ...   [M_N]  -> f(A_N, B_N, ..., M_N) -> [R_N]
- *   [A_N+1]          ...   [M_N+1]
- *    ...                   ...
+ *  Given all tuples:
+ *  Tuple A  Tuple B  ...  Tuple Z
+ *   [A_0]    [B_0]   ...   [Z_0]
+ *   [A_1]    [B_1]   ...   [Z_1]
+ *    ...      ...    ...    ...
+ *   [A_An]   [B_Bn]  ...   [Z_Zn]
  *
- *  With N being the size of the smallest tuple (Tuple B in this example).
  *
-
+ *  We create a new tuple R, given the indexes I{0, 1,..., Im}, like this:
+ *  Tuple R
+ *   [R_0]  = f(A[I0], B[I0], ..., Z[I0])
+ *   [R_1]  = f(A[I1], B[I1], ..., Z[I1])
+ *    ...   = f(...  , .... , ..., ...  )
+ *   [R_Rm] = f(A[Im], B[Im], ..., Z[Im])
+ *
+ *
+ *  With m being the size of the output tuple R, corresponding to the number of
+ *  indexes given.
+ *
+ *  @pre Each indexes I must by inferior to the size of the smallest tuple
+ *
+ *  @tparam I, Others... Indexes selecting elements inside inpiut tuples
+ *
  *  @param[in] f An operator called with each tuples elements
  *  @param[in] tpls... All tuples we wish to transform
  *
  *  @return std::tuple<...> Containing the result of each function call. Size
- *          matching the smallest input tuple.
+ *          matching the number of indexes.
+ */
+template <std::size_t I, std::size_t... Others, class F, class... TplLikes>
+constexpr auto TransformTuples(F&& f, TplLikes&&... tpls) {
+  static_assert(I < details::min(std::tuple_size_v<std::decay_t<TplLikes>>...),
+                "Out of bound tuple index access");
+
+  if constexpr (sizeof...(Others) == 0) {
+    return std::make_tuple(std::invoke(
+        std::forward<F>(f), std::get<I>(std::forward<TplLikes>(tpls))...));
+  } else {
+    return std::tuple_cat(
+        TransformTuples<I>(f, tpls...),
+        TransformTuples<Others...>(std::forward<F>(f),
+                                   std::forward<TplLikes>(tpls)...));
+  }
+}
+
+/**
+ *  @brief Same as TransformTuples<I...>(f, tpls...) using an index_sequence
+ *         helper as argument to automatically deduce indexes
+ */
+template <class F, std::size_t... I, class... TplLikes>
+constexpr auto TransformTuples(F&& f, std::index_sequence<I...>,
+                               TplLikes&&... tpls) {
+  if constexpr (sizeof...(I) >= 1) {
+    return TransformTuples<I...>(std::forward<F>(f),
+                                 std::forward<TplLikes>(tpls)...);
+  } else {
+    return std::make_tuple();
+  }
+}
+
+/**
+ *  @brief Same as TransformTuples<I...>(f, tpls...) with I... being a continous
+ *         range starting at 0, ending at the size of the smallest input tuple
  */
 template <class F, class... TplLikes>
 constexpr auto TransformTuples(F&& f, TplLikes&&... tpls) {
-  return details::TransformTuplesImpl(
-      std::forward<F>(f),
-      std::forward_as_tuple(std::forward<TplLikes>(tpls)...),
-      std::make_index_sequence<details::min(std::tuple_size_v<TplLikes>...)>{});
+  constexpr auto smallest_size =
+      details::min(std::tuple_size_v<std::decay_t<TplLikes>>...);
+
+  return TransformTuples(std::forward<F>(f),
+                         std::make_index_sequence<smallest_size>{},
+                         std::forward<TplLikes>(tpls)...);
 }
 
 /**

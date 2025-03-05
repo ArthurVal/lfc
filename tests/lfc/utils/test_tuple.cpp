@@ -130,14 +130,29 @@ TEST(TestTuple, ReduceTuple) {
 }
 
 TEST(TestTuple, TransformTuple) {
+  // Empty tuple
+  EXPECT_EQ(
+      std::make_tuple(),
+      TransformTuples(Add, std::make_tuple(), std::make_tuple(2, 2, 2, 2, 2, 2),
+                      std::make_tuple(2, 1, "Coucou")));
+
   EXPECT_EQ(
       std::make_tuple(3, 3, 3),
       TransformTuples(Add, std::make_tuple(1, 1, 1), std::make_tuple(2, 2, 2)));
+
+  EXPECT_EQ(std::make_tuple(3),
+            TransformTuples<1>(Add, std::make_tuple(1, 1, 1),
+                               std::make_tuple(2, 2, 2)));
 
   EXPECT_EQ(
       std::make_tuple(6, 7, 8),
       TransformTuples(Add, std::make_tuple(1, 2, 3), std::make_tuple(2, 2, 2),
                       std::make_tuple(3, 3, 3)));
+
+  EXPECT_EQ(std::make_tuple(6, 6, 6, 6, 6),
+            (TransformTuples<0, 0, 0, 0, 0>(Add, std::make_tuple(1, 2, 3),
+                                            std::make_tuple(2, 2, 2),
+                                            std::make_tuple(3, 3, 3))));
 
   EXPECT_EQ(std::make_tuple(3, 3),
             TransformTuples(Add, std::make_tuple(1, 1, 1, 1, 1, 1, 1),
