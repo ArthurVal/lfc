@@ -37,8 +37,8 @@ auto FailWhenCalled(std::unique_ptr<::testing::ScopedTrace> trace = nullptr) {
   };
 }
 
-#define FailWhenCalledWithScopeTrace(msg) \
-  FailWhenCalled(                         \
+#define FailWhenCalledWithTrace(msg) \
+  FailWhenCalled(                    \
       std::make_unique<::testing::ScopedTrace>(__FILE__, __LINE__, (msg)))
 
 TEST(TestTuple, Apply) {
@@ -63,8 +63,8 @@ TEST(TestTuple, Apply) {
 
 TEST(TestTuple, VisitTuple) {
   // Empty tuple
-  VisitTuples(FailWhenCalledWithScopeTrace(""), std::make_tuple());
-  VisitTuples(FailWhenCalledWithScopeTrace(""), std::make_tuple(1, 2, 3),
+  VisitTuples(FailWhenCalledWithTrace(""), std::make_tuple());
+  VisitTuples(FailWhenCalledWithTrace(""), std::make_tuple(1, 2, 3),
               std::make_tuple());
 
   {
@@ -117,7 +117,7 @@ TEST(TestTuple, VisitTuple) {
                     [](std::string_view str) { EXPECT_EQ(str, "Coucou"); },
                     [](int v) { EXPECT_EQ(v, 1); },
                     [](double v) { EXPECT_EQ(v, 3.14); },
-                    FailWhenCalledWithScopeTrace(""),
+                    FailWhenCalledWithTrace(""),
                 },
                 std::make_tuple(1, 3.14, "Coucou"sv));
   }
@@ -135,8 +135,8 @@ struct Accumulator {
 
 TEST(TestTuple, ReduceTuple) {
   // Empty tuple
-  EXPECT_EQ(
-      42, ReduceTuple(42, FailWhenCalledWithScopeTrace(""), std::make_tuple()));
+  EXPECT_EQ(42,
+            ReduceTuple(42, FailWhenCalledWithTrace(""), std::make_tuple()));
 
   EXPECT_EQ((5 + (1 + 1 + 1 + 1 + 1)),
             ReduceTuple(5, Add, std::make_tuple(1, 1, 1, 1, 1)));
@@ -177,7 +177,7 @@ TEST(TestTuple, TransformTuple) {
   // Empty tuple
   EXPECT_EQ(
       std::make_tuple(),
-      TransformTuples(FailWhenCalledWithScopeTrace(""), std::make_tuple(3, 4),
+      TransformTuples(FailWhenCalledWithTrace(""), std::make_tuple(3, 4),
                       std::make_tuple(), std::make_tuple(2, 1, "Coucou")));
 
   EXPECT_EQ(
