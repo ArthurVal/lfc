@@ -13,6 +13,10 @@ namespace {
 constexpr auto Add = [](auto&&... v) { return (... + v); };
 constexpr auto Mul = [](auto&&... v) { return (... * v); };
 
+constexpr auto AlwaysFails(std::string_view msg = "") {
+  return [=](auto&&...) { FAIL() << msg; };
+}
+
 TEST(TestTuple, Apply) {
   EXPECT_EQ(
       (1 + 5 + 4),
@@ -30,6 +34,12 @@ TEST(TestTuple, Apply) {
 }
 
 TEST(TestTuple, VisitTuple) {
+  // Empty tuple
+  VisitTuples(AlwaysFails("Shouldn't be called when having empty tuples"),
+              std::make_tuple());
+  VisitTuples(AlwaysFails("Shouldn't be called when having empty tuples"),
+              std::make_tuple(1, 2, 3), std::make_tuple());
+
   {
     int expected_v = -5;
     VisitTuples([&](int v) { EXPECT_EQ(v, expected_v++); },
@@ -80,7 +90,7 @@ TEST(TestTuple, VisitTuple) {
                     [](std::string_view str) { EXPECT_EQ(str, "Coucou"); },
                     [](int v) { EXPECT_EQ(v, 1); },
                     [](double v) { EXPECT_EQ(v, 3.14); },
-                    [](auto) { FAIL(); },
+                    AlwaysFails("Shouldn't be called when having empty tuples"),
                 },
                 std::make_tuple(1, 3.14, "Coucou"sv));
   }
@@ -97,6 +107,15 @@ struct Accumulator {
 };
 
 TEST(TestTuple, ReduceTuple) {
+  // Empty tuple
+  EXPECT_EQ(42,
+            ReduceTuple(
+                42, AlwaysFails("Shouldn't be called when having empty tuples"),
+                std::make_tuple()));
+
+  EXPECT_EQ((5 + (1 + 1 + 1 + 1 + 1)),
+            ReduceTuple(5, Add, std::make_tuple(1, 1, 1, 1, 1)));
+
   EXPECT_EQ((5 + (1 + 1 + 1 + 1 + 1)),
             ReduceTuple(5, Add, std::make_tuple(1, 1, 1, 1, 1)));
 
@@ -131,10 +150,11 @@ TEST(TestTuple, ReduceTuple) {
 
 TEST(TestTuple, TransformTuple) {
   // Empty tuple
-  EXPECT_EQ(
-      std::make_tuple(),
-      TransformTuples(Add, std::make_tuple(), std::make_tuple(2, 2, 2, 2, 2, 2),
-                      std::make_tuple(2, 1, "Coucou")));
+  EXPECT_EQ(std::make_tuple(),
+            TransformTuples(
+                AlwaysFails("Shouldn't be called when having empty tuples"),
+                std::make_tuple(), std::make_tuple(2, 2, 2, 2, 2, 2),
+                std::make_tuple(2, 1, "Coucou")));
 
   EXPECT_EQ(
       std::make_tuple(3, 3, 3),
