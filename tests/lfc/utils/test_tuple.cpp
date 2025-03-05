@@ -4,6 +4,7 @@
 #include "lfc/utils/interger_sequence.hpp"
 #include "lfc/utils/tuple.hpp"
 #include "tests/overload.hpp"
+#include "tests/stream_adapter.hpp"
 
 using namespace std::literals::string_view_literals;
 
@@ -13,11 +14,38 @@ namespace {
 constexpr auto Add = [](auto&&... v) { return (... + v); };
 constexpr auto Mul = [](auto&&... v) { return (... * v); };
 
-constexpr auto AlwaysFails(std::string_view msg = "") {
-  return [=](auto&&...) { FAIL() << msg; };
+template <class OStream, class T, class... Others>
+constexpr auto JoinInto(OStream&& os, std::string_view sep, T&& t,
+                        Others&&... others) {
+  os << std::forward<T>(t);
+
+  if constexpr (sizeof...(Others) > 0) {
+    ((os << sep << std::forward<Others>(others)), ...);
+  }
+
+  return std::forward<OStream>(os);
 }
 
+auto FailWhenCalled(std::unique_ptr<::testing::ScopedTrace> trace = nullptr) {
+  return [trace = std::move(trace)](auto&&... args) {
+    FAIL() << "Functor called with " << (sizeof...(args)) << " arguments ("
+           << JoinInto(
+                  std::stringstream{}, ", ",
+                  tests::TryToStream(std::forward<decltype(args)>(args))...)
+                  .str()
+           << ") yet it is expected to never be called...";
+  };
+}
+
+#define FailWhenCalledWithScopeTrace(msg) \
+  FailWhenCalled(                         \
+      std::make_unique<::testing::ScopedTrace>(__FILE__, __LINE__, (msg)))
+
 TEST(TestTuple, Apply) {
+  EXPECT_EQ(50 + 1 + 5,
+            (Apply(Add, std::make_tuple(50, 1, 5, 4, 5452, "Coucou"),
+                   MakeIndexSequence<3>())));
+
   EXPECT_EQ(
       (1 + 5 + 4),
       (Apply<1, 2, 3>(Add, std::make_tuple(50, 1, 5, 4, 5452, "Coucou"))));
@@ -35,10 +63,9 @@ TEST(TestTuple, Apply) {
 
 TEST(TestTuple, VisitTuple) {
   // Empty tuple
-  VisitTuples(AlwaysFails("Shouldn't be called when having empty tuples"),
+  VisitTuples(FailWhenCalledWithScopeTrace(""), std::make_tuple());
+  VisitTuples(FailWhenCalledWithScopeTrace(""), std::make_tuple(1, 2, 3),
               std::make_tuple());
-  VisitTuples(AlwaysFails("Shouldn't be called when having empty tuples"),
-              std::make_tuple(1, 2, 3), std::make_tuple());
 
   {
     int expected_v = -5;
@@ -90,7 +117,7 @@ TEST(TestTuple, VisitTuple) {
                     [](std::string_view str) { EXPECT_EQ(str, "Coucou"); },
                     [](int v) { EXPECT_EQ(v, 1); },
                     [](double v) { EXPECT_EQ(v, 3.14); },
-                    AlwaysFails("Shouldn't be called when having empty tuples"),
+                    FailWhenCalledWithScopeTrace(""),
                 },
                 std::make_tuple(1, 3.14, "Coucou"sv));
   }
@@ -108,10 +135,8 @@ struct Accumulator {
 
 TEST(TestTuple, ReduceTuple) {
   // Empty tuple
-  EXPECT_EQ(42,
-            ReduceTuple(
-                42, AlwaysFails("Shouldn't be called when having empty tuples"),
-                std::make_tuple()));
+  EXPECT_EQ(
+      42, ReduceTuple(42, FailWhenCalledWithScopeTrace(""), std::make_tuple()));
 
   EXPECT_EQ((5 + (1 + 1 + 1 + 1 + 1)),
             ReduceTuple(5, Add, std::make_tuple(1, 1, 1, 1, 1)));
@@ -150,11 +175,10 @@ TEST(TestTuple, ReduceTuple) {
 
 TEST(TestTuple, TransformTuple) {
   // Empty tuple
-  EXPECT_EQ(std::make_tuple(),
-            TransformTuples(
-                AlwaysFails("Shouldn't be called when having empty tuples"),
-                std::make_tuple(), std::make_tuple(2, 2, 2, 2, 2, 2),
-                std::make_tuple(2, 1, "Coucou")));
+  EXPECT_EQ(
+      std::make_tuple(),
+      TransformTuples(FailWhenCalledWithScopeTrace(""), std::make_tuple(3, 4),
+                      std::make_tuple(), std::make_tuple(2, 1, "Coucou")));
 
   EXPECT_EQ(
       std::make_tuple(3, 3, 3),
