@@ -106,8 +106,10 @@ struct LinearEquation {
 
     // Generates a sub tuple of size 'sizeof...(X)', excluding k0, that points
     // to each elements of kn
-    auto k0_removed = utils::Apply(CreateTupleView, kn,
-                                   utils::MakeIndexSequence<sizeof...(X), 1>());
+    using utils::tpl::Apply;
+
+    auto k0_removed =
+        Apply(CreateTupleView, kn, utils::MakeIndexSequence<sizeof...(X), 1>());
 
     if constexpr (MultiplyRight) {
       return k<0>() + SolveImpl(std::make_index_sequence<sizeof...(X)>{},

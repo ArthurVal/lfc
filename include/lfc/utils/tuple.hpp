@@ -3,7 +3,7 @@
 #include <functional>  // std::invoke
 #include <tuple>
 
-namespace lfc::utils {
+namespace lfc::utils::tpl {
 
 /**
  *  @brief Invoke f with the elements of tpl filtered by indexes I
@@ -16,7 +16,7 @@ namespace lfc::utils {
  *  @param[in] tpl Tuple like object
  */
 template <std::size_t... I, class F, class Tpl>
-constexpr auto Apply(F&& f, Tpl&& tpl) noexcept -> decltype(auto) {
+constexpr auto Apply(F&& f, Tpl&& tpl) -> decltype(auto) {
   if constexpr (sizeof...(I) == 0) {
     return std::apply(std::forward<F>(f), std::forward<Tpl>(tpl));
   } else {
@@ -31,7 +31,7 @@ constexpr auto Apply(F&& f, Tpl&& tpl) noexcept -> decltype(auto) {
  */
 template <class F, class Tpl, std::size_t... I>
 constexpr auto Apply(F&& f, Tpl&& tpl,
-                     std::index_sequence<I...>) noexcept -> decltype(auto) {
+                     std::index_sequence<I...>) -> decltype(auto) {
   return Apply<I...>(std::forward<F>(f), std::forward<Tpl>(tpl));
 }
 
@@ -63,7 +63,7 @@ constexpr auto min(T0&& t0, T1&& t1, Tn&&... others) -> decltype(auto) {
  */
 template <std::size_t I, std::size_t... Others, class Visitor,
           class... TplLikes>
-constexpr auto VisitTuples(Visitor&& v, TplLikes&&... tpls) noexcept -> void {
+constexpr auto Visit(Visitor&& v, TplLikes&&... tpls) -> void {
   static_assert(I < details::min(std::tuple_size_v<std::decay_t<TplLikes>>...),
                 "Out of bound tuple index access");
 
@@ -71,8 +71,7 @@ constexpr auto VisitTuples(Visitor&& v, TplLikes&&... tpls) noexcept -> void {
               std::get<I>(std::forward<decltype(tpls)>(tpls))...);
 
   if constexpr (sizeof...(Others) != 0) {
-    VisitTuples<Others...>(std::forward<Visitor>(v),
-                           std::forward<TplLikes>(tpls)...);
+    Visit<Others...>(std::forward<Visitor>(v), std::forward<TplLikes>(tpls)...);
   }
 }
 
@@ -87,11 +86,10 @@ constexpr auto VisitTuples(Visitor&& v, TplLikes&&... tpls) noexcept -> void {
  *  @param[in] tpls... Tuple like objects
  */
 template <class Visitor, class... TplLikes, std::size_t... I>
-constexpr auto VisitTuples(std::index_sequence<I...>, Visitor&& v,
-                           TplLikes&&... tpls) noexcept -> void {
+constexpr auto Visit(std::index_sequence<I...>, Visitor&& v,
+                     TplLikes&&... tpls) -> void {
   if constexpr (sizeof...(I) >= 1) {
-    VisitTuples<I...>(std::forward<Visitor>(v),
-                      std::forward<TplLikes>(tpls)...);
+    Visit<I...>(std::forward<Visitor>(v), std::forward<TplLikes>(tpls)...);
   }
 }
 
@@ -104,12 +102,12 @@ constexpr auto VisitTuples(std::index_sequence<I...>, Visitor&& v,
  *  @param[in] tpls... Tuple like objects
  */
 template <class Visitor, class... TplLikes>
-constexpr auto VisitTuples(Visitor&& v, TplLikes&&... tpls) noexcept -> void {
+constexpr auto Visit(Visitor&& v, TplLikes&&... tpls) -> void {
   constexpr auto smallest_size =
       details::min(std::tuple_size_v<std::decay_t<TplLikes>>...);
 
-  VisitTuples(std::make_index_sequence<smallest_size>{},
-              std::forward<Visitor>(v), std::forward<TplLikes>(tpls)...);
+  Visit(std::make_index_sequence<smallest_size>{}, std::forward<Visitor>(v),
+        std::forward<TplLikes>(tpls)...);
 }
 
 /**
@@ -124,8 +122,8 @@ constexpr auto VisitTuples(Visitor&& v, TplLikes&&... tpls) noexcept -> void {
  *  @return T Result of the reduction operation
  */
 template <class T, class BinaryOp, class Tpl>
-constexpr auto ReduceTuple(T init, BinaryOp&& f, Tpl&& tpl) -> T {
-  VisitTuples(
+constexpr auto Reduce(T init, BinaryOp&& f, Tpl&& tpl) -> T {
+  Visit(
       [&init, &f](auto&& v) {
         init = std::invoke(f, init, std::forward<decltype(v)>(v));
       },
@@ -137,21 +135,23 @@ constexpr auto ReduceTuple(T init, BinaryOp&& f, Tpl&& tpl) -> T {
  *  @brief Create a new tuple containing the result of invoking F(...) over all
  *         input tuples for each Ith elements sequentially
  *
- *  Given all tuples:
+ *  Given:
+ *
+ *  - The tuples:
  *  Tuple A  Tuple B  ...  Tuple Z
  *   [A_0]    [B_0]   ...   [Z_0]
  *   [A_1]    [B_1]   ...   [Z_1]
  *    ...      ...    ...    ...
  *   [A_An]   [B_Bn]  ...   [Z_Zn]
  *
+ *  - A list of m indexes [I_0, I_1, ..., I_m]
  *
- *  We create a new tuple R, given the indexes I{0, 1,..., Im}, like this:
+ *  We create a new tuple R:
  *  Tuple R
- *   [R_0]  = f(A[I0], B[I0], ..., Z[I0])
- *   [R_1]  = f(A[I1], B[I1], ..., Z[I1])
- *    ...   = f(...  , .... , ..., ...  )
- *   [R_Rm] = f(A[Im], B[Im], ..., Z[Im])
- *
+ *   [R_0]  = f(A[I_0], B[I_0], ..., Z[I_0])
+ *   [R_1]  = f(A[I_1], B[I_1], ..., Z[I_1])
+ *    ...   = f(...                        )
+ *   [R_Rm] = f(A[I_m], B[I_m], ..., Z[I_m])
  *
  *  With m being the size of the output tuple R, corresponding to the number of
  *  indexes given.
@@ -167,7 +167,7 @@ constexpr auto ReduceTuple(T init, BinaryOp&& f, Tpl&& tpl) -> T {
  *          matching the number of indexes.
  */
 template <std::size_t I, std::size_t... Others, class F, class... TplLikes>
-constexpr auto TransformTuples(F&& f, TplLikes&&... tpls) {
+constexpr auto Transform(F&& f, TplLikes&&... tpls) {
   static_assert(I < details::min(std::tuple_size_v<std::decay_t<TplLikes>>...),
                 "Out of bound tuple index access");
 
@@ -176,9 +176,9 @@ constexpr auto TransformTuples(F&& f, TplLikes&&... tpls) {
         std::forward<F>(f), std::get<I>(std::forward<TplLikes>(tpls))...));
   } else {
     return std::tuple_cat(
-        TransformTuples<I>(f, tpls...),
-        TransformTuples<Others...>(std::forward<F>(f),
-                                   std::forward<TplLikes>(tpls)...));
+        Transform<I>(f, tpls...),
+        Transform<Others...>(std::forward<F>(f),
+                             std::forward<TplLikes>(tpls)...));
   }
 }
 
@@ -187,11 +187,9 @@ constexpr auto TransformTuples(F&& f, TplLikes&&... tpls) {
  *         helper as argument to automatically deduce indexes
  */
 template <class F, std::size_t... I, class... TplLikes>
-constexpr auto TransformTuples(F&& f, std::index_sequence<I...>,
-                               TplLikes&&... tpls) {
+constexpr auto Transform(F&& f, std::index_sequence<I...>, TplLikes&&... tpls) {
   if constexpr (sizeof...(I) >= 1) {
-    return TransformTuples<I...>(std::forward<F>(f),
-                                 std::forward<TplLikes>(tpls)...);
+    return Transform<I...>(std::forward<F>(f), std::forward<TplLikes>(tpls)...);
   } else {
     return std::make_tuple();
   }
@@ -199,16 +197,17 @@ constexpr auto TransformTuples(F&& f, std::index_sequence<I...>,
 
 /**
  *  @brief Same as TransformTuples<I...>(f, tpls...) with I... being a continous
- *         range starting at 0, ending at the size of the smallest input tuple
+ *         range, starting from 0, ending based on the size of the smallest
+ *         tuple
  */
 template <class F, class... TplLikes>
-constexpr auto TransformTuples(F&& f, TplLikes&&... tpls) {
+constexpr auto Transform(F&& f, TplLikes&&... tpls) {
   constexpr auto smallest_size =
       details::min(std::tuple_size_v<std::decay_t<TplLikes>>...);
 
-  return TransformTuples(std::forward<F>(f),
-                         std::make_index_sequence<smallest_size>{},
-                         std::forward<TplLikes>(tpls)...);
+  return Transform(std::forward<F>(f),
+                   std::make_index_sequence<smallest_size>{},
+                   std::forward<TplLikes>(tpls)...);
 }
 
 /**
@@ -241,11 +240,11 @@ constexpr auto TransformTuples(F&& f, TplLikes&&... tpls) {
  *  @return T Result of the reduction operation, following the transformation
  */
 template <class T, class ReduceOp, class TransformOp, class... TplLikes>
-constexpr auto TransformReduceTuples(T init, ReduceOp&& r, TransformOp&& t,
-                                     TplLikes&&... tpls) {
-  return ReduceTuple(std::move(init), std::forward<ReduceOp>(r),
-                     TransformTuples(std::forward<TransformOp>(t),
-                                     std::forward<TplLikes>(tpls)...));
+constexpr auto TransformReduce(T init, ReduceOp&& r, TransformOp&& t,
+                               TplLikes&&... tpls) {
+  return Reduce(
+      std::move(init), std::forward<ReduceOp>(r),
+      Transform(std::forward<TransformOp>(t), std::forward<TplLikes>(tpls)...));
 }
 
 }  // namespace lfc::utils
