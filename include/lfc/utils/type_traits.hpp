@@ -27,4 +27,21 @@ struct RemoveCVRef {
 template <class T>
 using RemoveCVRef_t = typename RemoveCVRef<T>::type;
 
+/// TODO
+template <class Out, std::size_t N, class... T>
+struct RepeatInto;
+
+template <template <class...> class Out, std::size_t N, class... T,
+          class... Others>
+struct RepeatInto<Out<Others...>, N, T...>
+    : RepeatInto<Out<Others..., T...>, N - 1, T...> {};
+
+template <template <class...> class Out, class... T, class... Others>
+struct RepeatInto<Out<Others...>, 0, T...> {
+  using type = Out<Others...>;
+};
+
+template <class Out, std::size_t N, class... T>
+using RepeatInto_t = typename RepeatInto<Out, N, T...>::type;
+
 }  // namespace lfc::utils::details

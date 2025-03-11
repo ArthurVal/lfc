@@ -3,9 +3,8 @@
 #include <type_traits>  // std::true/false_type
 #include <utility>      // std::forward
 
-#include "lfc/utils/interger_sequence.hpp"  // MakeIndexSequence
 #include "lfc/utils/reference_wrapper.hpp"  // UnwrapRefWrapper_t
-#include "lfc/utils/tuple.hpp"              // Apply
+#include "lfc/utils/type_traits.hpp"        // RepeatInto_t
 
 namespace lfc {
 
@@ -27,9 +26,12 @@ constexpr bool IsLinearEquation_v = IsLinearEquation<T>::value;
 
 }  // namespace details
 
-// Generic LinearEquation, solving Kn[0] + (Kn[1] * X0) + (Kn[2] * X1) + ...
+// Generic LinearEquation, solving (Kn[0] * X0) + (Kn[1] * X1) + ...
 template <class... Kn>
 struct LinearEquation {
+  /// The size (number of K) of the LinearEquation
+  static constexpr auto Size() -> std::size_t { return sizeof...(Kn); }
+
   using kn_t = std::tuple<Kn...>;
 
   kn_t kn; /*!< Kn coeffs multiplied to the inputs x */
@@ -43,11 +45,14 @@ struct LinearEquation {
 
   /// Construct by forwarding coeffs
   template <class... T>
-  constexpr LinearEquation(T&&... values) : kn{std::forward<T>(values)...} {}
+  constexpr LinearEquation(T&&... values) : kn{std::forward<T>(values)...} {
+    static_assert(sizeof...(T) == Size());
+  }
 
-  /// The size (number of K) of the LinearEquation
-  static constexpr auto Size() -> std::size_t { return sizeof...(Kn); }
-  static_assert(Size() >= 1, "Requires at least one coefficient");
+  // TODO
+  template <std::size_t N>
+  using RepeatedTimes =
+      utils::details::RepeatInto_t<LinearEquation<>, N, Kn...>;
 
   /**
    *  @return k<0> + ((k<1> * x[0]) + (k<2> * x[1]) + ... + (k<n + 1> * x[n]))
@@ -62,27 +67,15 @@ struct LinearEquation {
   template <bool MultiplyRight = true, class... X>
   constexpr auto Solve(X&&... x) const {
     static_assert(
-        (Size() - 1) >= (sizeof...(X)),
+        Size() >= (sizeof...(X)),
         "Not enought coefficients to solve this as a linear equation");
 
-    constexpr auto CreateTupleView = [](auto&&... v) {
-      return std::forward_as_tuple(std::forward<decltype(v)>(v)...);
-    };
-
-    // Generates a sub tuple of size 'sizeof...(X)', referencing all elements of
-    // kn, excluding k0
-    using utils::tpl::Apply;
-    auto k0_removed =
-        Apply(CreateTupleView, kn, utils::MakeIndexSequence<sizeof...(X), 1>());
-
     if constexpr (MultiplyRight) {
-      return k<0>() + SolveImpl(std::make_index_sequence<sizeof...(X)>{},
-                                k0_removed,
-                                std::forward_as_tuple(std::forward<X>(x)...));
+      return SolveImpl(std::make_index_sequence<sizeof...(X)>{}, kn,
+                       std::forward_as_tuple(std::forward<X>(x)...));
     } else {
-      return k<0>() + SolveImpl(std::make_index_sequence<sizeof...(X)>{},
-                                std::forward_as_tuple(std::forward<X>(x)...),
-                                k0_removed);
+      return SolveImpl(std::make_index_sequence<sizeof...(X)>{},
+                       std::forward_as_tuple(std::forward<X>(x)...), kn);
     }
   }
 

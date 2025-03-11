@@ -3,7 +3,6 @@
 #include "gtest/gtest.h"
 #include "lfc/linear_equation.hpp"
 #include "tests/mocks/arithmetic.hpp"
-#include "tests/mocks/callable.hpp"
 
 namespace lfc {
 namespace {
@@ -239,47 +238,39 @@ TEST(TestLinearEquation, Solve) {
   using tests::ArithmeticMock;
 
   auto k0 = StrictMock<ArithmeticMock<int, int>>{};
-  auto k1 = StrictMock<ArithmeticMock<int, int>>{};
-  auto k2 = StrictMock<ArithmeticMock<decltype(k1)&, int>>{};
+  auto k1 = StrictMock<ArithmeticMock<decltype(k0)&, int>>{};
 
   // Mocks can't be copied, we must pass by reference -> Tie
-  auto eq = TieAsLinearEquation(k0, k1, k2);
+  auto eq = TieAsLinearEquation(k0, k1);
 
-  int x1 = 123;
-  int x2 = 321;
+  int x0 = 123;
+  int x1 = 321;
 
   using testing::Return;
   using testing::ReturnRef;
 
   testing::InSequence seq;
 
-  // (k2 * x2) -> k1
-  EXPECT_CALL(eq.k<2>(), Multiplication(x2, ArgSide::Right))
+  // (k1 * x1) -> k0
+  EXPECT_CALL(eq.k<1>(), Multiplication(x1, ArgSide::Right))
       .Times(1)
-      .WillOnce(ReturnRef(k1))
+      .WillOnce(ReturnRef(k0))
       .RetiresOnSaturation();
 
-  // (k1 * x1) -> 456
-  EXPECT_CALL(eq.k<1>(), Multiplication(x1, ArgSide::Right))
+  // (k0 * x0) -> 456
+  EXPECT_CALL(eq.k<0>(), Multiplication(x0, ArgSide::Right))
       .Times(1)
       .WillOnce(Return(456))
       .RetiresOnSaturation();
 
-  // ((k1 * x1) + (k2 * x2))
-  // (  456    +     k1    ) -> 789
-  EXPECT_CALL(eq.k<1>(), Addition(456, ArgSide::Left))
+  // ((k0 * x0) + (k1 * x1))
+  // (  456    +     k0    ) -> 789
+  EXPECT_CALL(eq.k<0>(), Addition(456, ArgSide::Left))
       .Times(1)
       .WillOnce(Return(789))
       .RetiresOnSaturation();
 
-  // k0 + ((k1 * x1) + (k2 * x2))
-  // k0 + (         789         ) -> -1
-  EXPECT_CALL(eq.k<0>(), Addition(789, ArgSide::Right))
-      .Times(1)
-      .WillOnce(Return(-1))
-      .RetiresOnSaturation();
-
-  EXPECT_EQ(-1, eq.Solve(x1, x2));
+  EXPECT_EQ(789, eq.Solve(x0, x1));
 }
 
 TEST(TestLinearEquation, SolveReverseMultiplication) {
@@ -288,83 +279,40 @@ TEST(TestLinearEquation, SolveReverseMultiplication) {
   using tests::ArithmeticMock;
 
   auto k0 = StrictMock<ArithmeticMock<int, int>>{};
-  auto k1 = StrictMock<ArithmeticMock<int, int>>{};
-  auto k2 = StrictMock<ArithmeticMock<decltype(k1)&, int>>{};
+  auto k1 = StrictMock<ArithmeticMock<decltype(k0)&, int>>{};
 
   // Mocks can't be copied, we must pass by reference -> Tie
-  auto eq = TieAsLinearEquation(k0, k1, k2);
+  auto eq = TieAsLinearEquation(k0, k1);
 
-  int x1 = 123;
-  int x2 = 321;
+  int x0 = 123;
+  int x1 = 321;
 
   // We can reverse multiplication side using Solve<false>()
   using testing::Return;
   using testing::ReturnRef;
 
   testing::InSequence seq;
-  // (x2 * k2) -> k1
-  EXPECT_CALL(eq.k<2>(), Multiplication(x2, ArgSide::Left))
+  // (x1 * k1) -> k0
+  EXPECT_CALL(eq.k<1>(), Multiplication(x1, ArgSide::Left))
       .Times(1)
-      .WillOnce(ReturnRef(k1))
+      .WillOnce(ReturnRef(k0))
       .RetiresOnSaturation();
 
-  // (x1 * k1) -> 456
-  EXPECT_CALL(eq.k<1>(), Multiplication(x1, ArgSide::Left))
+  // (x0 * k0) -> 456
+  EXPECT_CALL(eq.k<0>(), Multiplication(x0, ArgSide::Left))
       .Times(1)
       .WillOnce(Return(456))
       .RetiresOnSaturation();
 
   // Addition are unchanged
-  // ((x1 * k1) + (x2 * k2))
-  // (  456    +     k1    ) -> 789
-  EXPECT_CALL(eq.k<1>(), Addition(456, ArgSide::Left))
-      .Times(1)
-      .WillOnce(Return(789))
-      .RetiresOnSaturation();
-
-  // k0 + ((x1 * k1) + (x2 * k2))
-  // k0 + (         789         ) -> -1
-  EXPECT_CALL(eq.k<0>(), Addition(789, ArgSide::Right))
+  // ((x0 * k0) + (x1 * k1))
+  // (  456    +     k0    ) -> 789
+  EXPECT_CALL(eq.k<0>(), Addition(456, ArgSide::Left))
       .Times(1)
       .WillOnce(Return(-1))
       .RetiresOnSaturation();
 
-  EXPECT_EQ(-1, eq.Solve<false>(x1, x2));
-}
-
-TEST(TestLinearEquation, SolveExceptionNotCaught) {
-  using testing::StrictMock;
-  using tests::ArgSide;
-  using tests::ArithmeticMock;
-
-  auto k0 = StrictMock<ArithmeticMock<int, int>>{};
-  auto k1 = StrictMock<ArithmeticMock<int, int>>{};
-  auto k2 = StrictMock<ArithmeticMock<decltype(k1)&, int>>{};
-
-  // Mocks can't be copied, we must pass by reference -> Tie
-  auto eq = TieAsLinearEquation(k0, k1, k2);
-
-  int x1 = 123;
-  int x2 = 321;
-
-  // Exceptions are correctly forwarded and not intercepted
-  using testing::ReturnRef;
-  using testing::Throw;
-
-  testing::InSequence seq;
-  EXPECT_CALL(eq.k<2>(), Multiplication(x2, ArgSide::Right))
-      .Times(2)
-      .WillOnce(Throw(std::runtime_error{"Hi !"}))
-      .WillOnce(ReturnRef(k1))
-      .RetiresOnSaturation();
-
-  EXPECT_CALL(eq.k<1>(), Multiplication(x1, ArgSide::Right))
-      .Times(1)
-      .WillOnce(Throw(std::logic_error{"Hi !"}))
-      .RetiresOnSaturation();
-
-  EXPECT_THROW({ eq.Solve(x1, x2); }, std::runtime_error);
-  EXPECT_THROW({ eq.Solve(x1, x2); }, std::logic_error);
+  EXPECT_EQ(-1, eq.Solve<false>(x0, x1));
 }
 
 TEST(TestLinearEquation, SolveIgnoredArgs) {
@@ -374,7 +322,7 @@ TEST(TestLinearEquation, SolveIgnoredArgs) {
 
   auto k0 = StrictMock<ArithmeticMock<int, int>>{};
   auto k1 = StrictMock<ArithmeticMock<int, int>>{};
-  auto k2 = StrictMock<ArithmeticMock<decltype(k1)&, int>>{};
+  auto k2 = StrictMock<ArithmeticMock<int, int>>{};
 
   // Mocks can't be copied, we must pass by reference -> Tie
   auto eq = TieAsLinearEquation(k0, k1, k2);
@@ -387,18 +335,11 @@ TEST(TestLinearEquation, SolveIgnoredArgs) {
   // (k1 * x1) -> -1
   EXPECT_CALL(eq.k<1>(), Multiplication(x1, ArgSide::Right))
       .Times(1)
-      .WillOnce(Return(-1))
-      .RetiresOnSaturation();
-
-  // k0 + (k1 * x1)
-  // k0 + (  -1   ) -> 111
-  EXPECT_CALL(eq.k<0>(), Addition(-1, ArgSide::Right))
-      .Times(1)
       .WillOnce(Return(111))
       .RetiresOnSaturation();
 
   // Ignored disable x2, hence k2 not used
-  EXPECT_EQ(111, eq.Solve(x1, Ignored));
+  EXPECT_EQ(111, eq.Solve(Ignored, x1, Ignored));
 }
 
 TEST(TestLinearEquation, SolveIgnoredCoeffs) {
@@ -411,6 +352,7 @@ TEST(TestLinearEquation, SolveIgnoredCoeffs) {
   // Mocks can't be copied, we must pass by reference -> Tie
   auto eq = MakeLinearEquation(Ignored, std::ref(k1), Ignored);
 
+  int x0 = 0;
   int x1 = 123;
   int x2 = 321;
 
@@ -423,7 +365,7 @@ TEST(TestLinearEquation, SolveIgnoredCoeffs) {
       .WillOnce(Return(-100))
       .RetiresOnSaturation();
 
-  EXPECT_EQ(-100, eq.Solve(x1, x2));
+  EXPECT_EQ(-100, eq.Solve(x0, x1, x2));
 }
 
 }  // namespace
