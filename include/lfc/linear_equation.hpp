@@ -9,41 +9,6 @@
 
 namespace lfc {
 
-/**
- * @brief Pseudo arithmetic tag object use to disable operator*() and forward
- *        anything through operator+().
- *
- * Can be used either when:
- * - Creating the equation direclty:
- *   MakeLinearEquation(NotUsed{}, K1, K2) -> Removes K0 completely;
- * - Solving and skiping some Kn:
- *   Solve(x1, NotUsed{}, x3) -> K0 + (K1 * x1) + (K3 * x3),
- *   (K2 * x2) is ignored
- */
-struct Ignored_t {};
-
-constexpr auto Ignored = Ignored_t{};
-
-template <class T>
-constexpr auto operator*(Ignored_t, T&&) noexcept -> Ignored_t {
-  return Ignored;
-}
-
-template <class T>
-constexpr auto operator*(T&&, Ignored_t) noexcept -> Ignored_t {
-  return Ignored;
-}
-
-template <class T>
-constexpr auto operator+(Ignored_t, T&& v) noexcept -> T&& {
-  return std::forward<T>(v);
-}
-
-template <class T>
-constexpr auto operator+(T&& v, Ignored_t) noexcept -> T&& {
-  return std::forward<T>(v);
-}
-
 /// Forward declaration of LinearEquation for the meta function below
 template <class... Kn>
 struct LinearEquation;
@@ -104,10 +69,9 @@ struct LinearEquation {
       return std::forward_as_tuple(std::forward<decltype(v)>(v)...);
     };
 
-    // Generates a sub tuple of size 'sizeof...(X)', excluding k0, that points
-    // to each elements of kn
+    // Generates a sub tuple of size 'sizeof...(X)', referencing all elements of
+    // kn, excluding k0
     using utils::tpl::Apply;
-
     auto k0_removed =
         Apply(CreateTupleView, kn, utils::MakeIndexSequence<sizeof...(X), 1>());
 
@@ -204,6 +168,41 @@ constexpr auto TieAsLinearEquation(K&... k) -> LinearEquation<K&...> {
 template <class... K>
 constexpr auto ForwardAsLinearEquation(K&&... k) -> LinearEquation<K&&...> {
   return {std::forward<K>(k)...};
+}
+
+// Usefull Coeffs adapters //////////////////////////////////////////////////
+/**
+ * @brief Pseudo arithmetic tag object use to disable operator*() and forward
+ *        anything through operator+().
+ *
+ * Can be used either when:
+ * - Creating the equation direclty:
+ *   MakeLinearEquation(NotUsed{}, K1, K2) -> Removes K0 completely;
+ * - Solving and skiping some Kn:
+ *   Solve(x1, NotUsed{}, x3) -> K0 + (K1 * x1) + (K3 * x3),
+ *   (K2 * x2) is ignored
+ */
+struct Ignored_t {};
+constexpr auto Ignored = Ignored_t{};
+
+template <class T>
+constexpr auto operator*(Ignored_t, T&&) noexcept -> Ignored_t {
+  return Ignored;
+}
+
+template <class T>
+constexpr auto operator*(T&&, Ignored_t) noexcept -> Ignored_t {
+  return Ignored;
+}
+
+template <class T>
+constexpr auto operator+(Ignored_t, T&& v) noexcept -> T&& {
+  return std::forward<T>(v);
+}
+
+template <class T>
+constexpr auto operator+(T&& v, Ignored_t) noexcept -> T&& {
+  return std::forward<T>(v);
 }
 
 }  // namespace lfc
