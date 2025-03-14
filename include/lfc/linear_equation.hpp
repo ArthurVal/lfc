@@ -129,7 +129,7 @@ struct LinearEquation {
  */
 template <class... K>
 constexpr auto MakeLinearEquation(K&&... k)
-    -> LinearEquation<utils::details::UnwrapRefWrapper_t<std::decay_t<K>>...> {
+    -> LinearEquation<utils::UnwrapRefWrapper_t<std::decay_t<K>>...> {
   return {std::forward<K>(k)...};
 }
 
