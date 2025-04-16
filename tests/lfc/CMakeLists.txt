@@ -1,7 +1,5 @@
-add_subdirectory(utils)
-
 add_executable(tests-${PROJECT_NAME}
-  test_linear_equation.cpp
+  test_linear_model.cpp
 )
 
 target_link_libraries(tests-${PROJECT_NAME}

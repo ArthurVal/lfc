@@ -1,3 +1,4 @@
 Linear Feedback Controller (lfc)
 ================================
-TODO
+
+This project defines
