@@ -58,14 +58,14 @@ TEST(TestLinearModel, Make) {
   {
     auto model = MakeLinearModel(1);
     EXPECT_EQ(sizeof(model), sizeof(int));
-    EXPECT_EQ(model.gains, 1);
+    EXPECT_EQ(model.coeffs, 1);
     // EXPECT_EQ(model.offset, 2); // offset doesn't exists
   }
 
   {
     auto model = MakeLinearModel(1, 2);
     EXPECT_EQ(sizeof(model), 2 * sizeof(int));
-    EXPECT_EQ(model.gains, 1);
+    EXPECT_EQ(model.coeffs, 1);
     EXPECT_EQ(model.offset, 2);
   }
 
@@ -73,7 +73,7 @@ TEST(TestLinearModel, Make) {
     // No constraints on the type (will need to define arithmetic operators with
     // the X when calling Solve() ...)
     auto model = MakeLinearModel(1, "Coucou");
-    EXPECT_EQ(model.gains, 1);
+    EXPECT_EQ(model.coeffs, 1);
     EXPECT_STREQ(model.offset, "Coucou");
   }
 
@@ -84,14 +84,14 @@ TEST(TestLinearModel, Make) {
     auto i = initial_value;
     auto d = 0.728182;
     auto model = MakeLinearModel(i, d);
-    EXPECT_EQ(model.gains, i);
-    EXPECT_EQ(model.gains, initial_value);
+    EXPECT_EQ(model.coeffs, i);
+    EXPECT_EQ(model.coeffs, initial_value);
 
     EXPECT_DOUBLE_EQ(model.offset, d);
 
     i = 10;
-    EXPECT_NE(model.gains, i);
-    EXPECT_EQ(model.gains, initial_value);
+    EXPECT_NE(model.coeffs, i);
+    EXPECT_EQ(model.coeffs, initial_value);
   }
 
   {
@@ -103,20 +103,20 @@ TEST(TestLinearModel, Make) {
     auto model = MakeLinearModel(std::ref(i), std::cref(d));
 
     // Ref
-    EXPECT_EQ(std::addressof(model.gains), std::addressof(i));
+    EXPECT_EQ(std::addressof(model.coeffs), std::addressof(i));
     EXPECT_EQ(std::addressof(model.offset), std::addressof(d));
 
-    EXPECT_EQ(model.gains, i);
-    EXPECT_EQ(model.gains, initial_value);
+    EXPECT_EQ(model.coeffs, i);
+    EXPECT_EQ(model.coeffs, initial_value);
 
     EXPECT_DOUBLE_EQ(model.offset, d);
 
     i = 10;
-    EXPECT_EQ(model.gains, 10);
-    EXPECT_NE(model.gains, initial_value);
+    EXPECT_EQ(model.coeffs, 10);
+    EXPECT_NE(model.coeffs, initial_value);
 
     // Not using cref make it mutable from PD
-    model.gains = 20;
+    model.coeffs = 20;
     EXPECT_EQ(i, 20);
 
     // model.offset = 0.; // -> Doesn't compile
@@ -145,14 +145,14 @@ TEST(TestLinearModel, Tie) {
   {
     int k0_ref = 0;
     auto model = TieAsLinearModel(k0_ref);
-    EXPECT_EQ(std::addressof(model.gains), std::addressof(k0_ref));
+    EXPECT_EQ(std::addressof(model.coeffs), std::addressof(k0_ref));
   }
 
   {
     int k0_ref = 0;
     constexpr int k1_ref = 1;
     auto model = TieAsLinearModel(k0_ref, k1_ref);
-    EXPECT_EQ(std::addressof(model.gains), std::addressof(k0_ref));
+    EXPECT_EQ(std::addressof(model.coeffs), std::addressof(k0_ref));
     EXPECT_EQ(std::addressof(model.offset), std::addressof(k1_ref));
   }
 
@@ -161,7 +161,7 @@ TEST(TestLinearModel, Tie) {
     char k1_ref = 3;
 
     auto model = TieAsLinearModel(k0_ref, k1_ref);
-    EXPECT_EQ(std::addressof(model.gains), std::addressof(k0_ref));
+    EXPECT_EQ(std::addressof(model.coeffs), std::addressof(k0_ref));
     EXPECT_EQ(std::addressof(model.offset), std::addressof(k1_ref));
   }
 }
@@ -230,7 +230,7 @@ TEST(TestLinearModel, Solve) {
   using tests::ArgSide;
   using tests::ArithmeticMock;
 
-  auto gains = StrictMock<ArithmeticMock<int, int>>{};
+  auto coeffs = StrictMock<ArithmeticMock<int, int>>{};
   auto offset = StrictMock<ArithmeticMock<int, int>>{};
 
   int x = 123;
@@ -241,32 +241,32 @@ TEST(TestLinearModel, Solve) {
     // WITH OFFSET
     testing::InSequence seq;
 
-    // (gains * x) -> 321
-    EXPECT_CALL(gains, Multiplication(x, ArgSide::Right))
+    // (coeffs * x) -> 321
+    EXPECT_CALL(coeffs, Multiplication(x, ArgSide::Right))
         .Times(1)
         .WillOnce(Return(321))
         .RetiresOnSaturation();
 
-    // offset + (gains * x)
+    // offset + (coeffs * x)
     // offset + 321 -> -1
     EXPECT_CALL(offset, Addition(321, ArgSide::Right))
         .Times(1)
         .WillOnce(Return(-1))
         .RetiresOnSaturation();
 
-    EXPECT_EQ(-1, Solve(ForwardAsLinearModel(gains, offset), x));
+    EXPECT_EQ(-1, Solve(ForwardAsLinearModel(coeffs, offset), x));
   }
 
   {
     // NO OFFSET
 
-    // (gains * x) -> 321
-    EXPECT_CALL(gains, Multiplication(x, ArgSide::Right))
+    // (coeffs * x) -> 321
+    EXPECT_CALL(coeffs, Multiplication(x, ArgSide::Right))
         .Times(1)
         .WillOnce(Return(456))
         .RetiresOnSaturation();
 
-    EXPECT_EQ(456, Solve(ForwardAsLinearModel(gains), x));
+    EXPECT_EQ(456, Solve(ForwardAsLinearModel(coeffs), x));
   }
 }
 
