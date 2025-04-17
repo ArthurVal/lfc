@@ -217,20 +217,32 @@ TEST(TestLinearModel, Forward) {
                      LinearModel<int&&, char&&>>);
 }
 
-template <class T>
-struct IsValidMock {
-  MOCK_METHOD(bool, IsValid, (T), (const));
-  friend constexpr auto IsValid(const IsValidMock& m, T o) -> bool {
+template <class OffsetType>
+struct MockIsValid {
+  MOCK_METHOD(bool, IsValid, (const OffsetType&), ());
+  friend constexpr auto IsValid(MockIsValid& m, const OffsetType& o) -> bool {
     return m.IsValid(o);
   }
 
+  MOCK_METHOD(bool, IsValid, (const OffsetType&), (const));
+  friend constexpr auto IsValid(const MockIsValid& m,
+                                const OffsetType& o) -> bool {
+    return m.IsValid(o);
+  }
+
+  MOCK_METHOD(bool, IsValidWithoutOffset, (), ());
+  friend constexpr auto IsValid(MockIsValid& m) -> bool {
+    return m.IsValidWithoutOffset();
+  }
+
   MOCK_METHOD(bool, IsValidWithoutOffset, (), (const));
-  friend constexpr auto IsValid(const IsValidMock& m) -> bool {
+  friend constexpr auto IsValid(const MockIsValid& m) -> bool {
     return m.IsValidWithoutOffset();
   }
 };
 
 TEST(TestLinearModel, IsValid) {
+  using testing::Const;
   using testing::Return;
 
   {
@@ -252,7 +264,7 @@ TEST(TestLinearModel, IsValid) {
   }
 
   using testing::StrictMock;
-  auto coeffs = StrictMock<IsValidMock<int>>{};
+  auto coeffs = StrictMock<MockIsValid<int>>{};
 
   {
     auto model = TieAsLinearModel(coeffs);
@@ -272,7 +284,7 @@ TEST(TestLinearModel, IsValid) {
 
   {
     auto offset = 2;
-    auto model = MakeLinearModel(std::cref(coeffs), offset);
+    auto model = MakeLinearModel(std::ref(coeffs), offset);
 
     using model_traits = LinearModelTraits<decltype(model)>;
     static_assert(model_traits::HasIsValid());
@@ -286,12 +298,34 @@ TEST(TestLinearModel, IsValid) {
     EXPECT_FALSE(IsValid(model));
     EXPECT_TRUE(IsValid(model));
   }
+
+  {
+    auto offset = 3;
+    auto model = MakeLinearModel(std::cref(coeffs), offset);
+
+    using model_traits = LinearModelTraits<decltype(model)>;
+    static_assert(model_traits::HasIsValid());
+
+    EXPECT_CALL(Const(coeffs), IsValid(offset))
+        .Times(2)
+        .WillOnce(Return(true))
+        .WillOnce(Return(false))
+        .RetiresOnSaturation();
+
+    EXPECT_TRUE(IsValid(model));
+    EXPECT_FALSE(IsValid(model));
+  }
 }
 
 template <class T>
-struct AcceptsMock {
-  MOCK_METHOD(bool, Accepts, (T), (const));
-  friend constexpr auto Accepts(const AcceptsMock& m, T t) -> bool {
+struct MockAccepts {
+  MOCK_METHOD(bool, Accepts, (const T&), ());
+  friend constexpr auto Accepts(MockAccepts& m, const T& t) -> bool {
+    return m.Accepts(t);
+  }
+
+  MOCK_METHOD(bool, Accepts, (const T&), (const));
+  friend constexpr auto Accepts(const MockAccepts& m, const T& t) -> bool {
     return m.Accepts(t);
   }
 };
@@ -318,22 +352,42 @@ TEST(TestLinearModel, Accepts) {
   }
 
   using testing::StrictMock;
-  auto coeffs = StrictMock<AcceptsMock<int>>{};
+  auto coeffs = StrictMock<MockAccepts<int>>{};
 
   {
-    auto model = TieAsLinearModel(coeffs);
+    auto model = MakeLinearModel(std::ref(coeffs));
+    auto x = 4;
 
     using model_traits = LinearModelTraits<decltype(model)>;
     static_assert(model_traits::HasAccepts<int>());
+    static_assert(!model_traits::HasAccepts<std::string>());
 
-    EXPECT_CALL(coeffs, Accepts(4))
+    EXPECT_CALL(coeffs, Accepts(x))
         .Times(2)
         .WillOnce(Return(true))
         .WillOnce(Return(false))
         .RetiresOnSaturation();
 
-    EXPECT_TRUE(Accepts(model, 4));
-    EXPECT_FALSE(Accepts(model, 4));
+    EXPECT_TRUE(Accepts(model, x));
+    EXPECT_FALSE(Accepts(model, x));
+  }
+
+  {
+    auto model = MakeLinearModel(std::cref(coeffs));
+    auto x = 5;
+
+    using model_traits = LinearModelTraits<decltype(model)>;
+    static_assert(model_traits::HasAccepts<int>());
+    static_assert(!model_traits::HasAccepts<const char*>());
+
+    EXPECT_CALL(Const(coeffs), Accepts(x))
+        .Times(2)
+        .WillOnce(Return(false))
+        .WillOnce(Return(true))
+        .RetiresOnSaturation();
+
+    EXPECT_FALSE(Accepts(model, x));
+    EXPECT_TRUE(Accepts(model, x));
   }
 }
 
