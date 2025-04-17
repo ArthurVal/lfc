@@ -86,7 +86,7 @@ struct LinearModelTraits<LinearModel<_Coeffs, _Offset>> : std::true_type {
   }
 };
 
-/// Meta variable returning TRUE when T is a LinearModel<>
+/// Meta variable set to TRUE when T is a LinearModel<>
 template <class T>
 constexpr bool IsLinearModel_v = LinearModelTraits<T>::value;
 
