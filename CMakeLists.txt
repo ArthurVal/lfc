@@ -1,4 +1,3 @@
-# From ROS2 - HUMBLE
 cmake_minimum_required(VERSION 3.22)
 
 project(lfc
@@ -35,7 +34,10 @@ option(${PROJECT_NAME}_ENABLE_TESTING
   "Enable unit tests build of ${PROJECT_NAME}"
   OFF
 )
-cmake_print_variables(${PROJECT_NAME}_ENABLE_TESTING)
+cmake_print_variables(
+  BUILD_TESTING
+  ${PROJECT_NAME}_ENABLE_TESTING
+)
 
 if(BUILD_TESTING OR ${PROJECT_NAME}_ENABLE_TESTING)
   enable_testing()

@@ -3,7 +3,7 @@
 #include <type_traits>
 #include <utility>
 
-#include "lfc/utils/reference_wrapper.hpp"
+#include "internal/reference_wrapper.hpp"
 
 namespace lfc {
 
@@ -64,15 +64,15 @@ using EnableIfLinearModel = std::enable_if_t<IsLinearModel_v<T>, bool>;
  */
 template <class CoeffsType, class OffsetType>
 constexpr auto MakeLinearModel(CoeffsType&& coeffs, OffsetType&& offset)
-    -> LinearModel<utils::UnwrapRefWrapper_t<std::decay_t<CoeffsType>>,
-                   utils::UnwrapRefWrapper_t<std::decay_t<OffsetType>>> {
+    -> LinearModel<internal::UnwrapRefWrapper_t<std::decay_t<CoeffsType>>,
+                   internal::UnwrapRefWrapper_t<std::decay_t<OffsetType>>> {
   return {std::forward<CoeffsType>(coeffs), std::forward<OffsetType>(offset)};
 }
 
 /// Specialisation disabling offset
 template <class CoeffsType>
 constexpr auto MakeLinearModel(CoeffsType&& coeffs)
-    -> LinearModel<utils::UnwrapRefWrapper_t<std::decay_t<CoeffsType>>> {
+    -> LinearModel<internal::UnwrapRefWrapper_t<std::decay_t<CoeffsType>>> {
   return {std::forward<CoeffsType>(coeffs)};
 }
 
@@ -134,7 +134,7 @@ constexpr auto HasOffset(Model&&) -> bool {
 }
 
 /**
- *  \return The result of (offset + (gains * x)) or (gains * x) if the model
+ *  \return The result of (offset + (coeffs * x)) or (coeffs * x) if the model
  *          doesn't have any offsets
  *
  *  \param[in] model Any valid LinearModel<>
@@ -144,7 +144,8 @@ template <class Model, class X,
           details::EnableIfLinearModel<std::decay_t<Model>> = true>
 constexpr auto Solve(Model&& model, X&& x) {
   if constexpr (HasOffset<std::decay_t<Model>>()) {
-    return model.offset + (model.coeffs * std::forward<X>(x));
+    return std::forward<Model>(model).offset +
+           (std::forward<Model>(model).coeffs * std::forward<X>(x));
   } else {
     return std::forward<Model>(model).coeffs * std::forward<X>(x);
   }

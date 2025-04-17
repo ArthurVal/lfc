@@ -260,7 +260,7 @@ TEST(TestLinearModel, Solve) {
   {
     // NO OFFSET
 
-    // (coeffs * x) -> 321
+    // (coeffs * x) -> 456
     EXPECT_CALL(coeffs, Multiplication(x, ArgSide::Right))
         .Times(1)
         .WillOnce(Return(456))

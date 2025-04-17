@@ -2,7 +2,7 @@
 
 #include <functional>  // std::reference_wrapper
 
-namespace lfc::utils {
+namespace lfc::internal {
 
 /// Transforms std::reference_wrapper<T> to T&. Any other type is untouched.
 template <class T>
@@ -18,4 +18,4 @@ struct UnwrapRefWrapper<std::reference_wrapper<T>> {
 template <class T>
 using UnwrapRefWrapper_t = typename UnwrapRefWrapper<T>::type;
 
-}  // namespace lfc::utils
+}  // namespace lfc::internal

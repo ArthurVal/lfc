@@ -1,19 +1,44 @@
-add_subdirectory(utils)
-
-find_package(Eigen3 REQUIRED)
+# find_package(Eigen3 REQUIRED)
 
 add_library(${PROJECT_NAME} INTERFACE)
 add_library(${PROJECT_NAME}::${PROJECT_NAME} ALIAS ${PROJECT_NAME})
 
-target_link_libraries(${PROJECT_NAME}
+target_include_directories(${PROJECT_NAME}
   INTERFACE
-  ${PROJECT_NAME}::utils
-  Eigen3::Eigen
+  $<BUILD_INTERFACE:${CMAKE_SOURCE_DIR}/include>
+  $<BUILD_INTERFACE:${CMAKE_BINARY_DIR}/include>
+  $<INSTALL_INTERFACE:${CMAKE_INSTALL_INCLUDEDIR}>
+
+  # PRIVATE
+  # $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}>
+  # $<BUILD_INTERFACE:${CMAKE_CURRENT_BINARY_DIR}>
+)
+
+# target_link_libraries(${PROJECT_NAME}
+#   INTERFACE
+#   Eigen3::Eigen
+# )
+
+target_compile_features(${PROJECT_NAME}
+  INTERFACE
+  cxx_std_17
 )
 
 # target_compile_definitions(${PROJECT_NAME}
 #   INTERFACE
 #   )
+
+target_compile_options(${PROJECT_NAME}
+  INTERFACE
+  -Wall
+  -Wextra
+  -Wpedantic
+  -Wshadow
+  -Wdouble-promotion
+  -Wundef
+  -Wconversion
+  # -Werror
+)
 
 set_target_properties(${PROJECT_NAME}
   PROPERTIES
