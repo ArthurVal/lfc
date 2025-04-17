@@ -56,4 +56,7 @@ struct MockCoeffs : public MockIsValid<OffsetType>,
                     public MockAccepts<T>,
                     public MockMultiplication<T> {};
 
+template <class T>
+struct MockOffset : public MockAddition<T> {};
+
 }  // namespace tests

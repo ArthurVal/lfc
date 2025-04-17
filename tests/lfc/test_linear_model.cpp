@@ -363,21 +363,35 @@ TEST(TestLinearModel, Accepts) {
 }
 
 TEST(TestLinearModel, Solve) {
-  using testing::StrictMock;
   using tests::ArgSide;
-  using tests::MockAddition;
-  using tests::MockMultiplication;
+  using tests::MockCoeffs;
+  using tests::MockOffset;
 
-  auto coeffs = StrictMock<MockMultiplication<int>>{};
-  auto offset = StrictMock<MockAddition<int>>{};
+  using testing::_;
+  using testing::Ref;
+  using testing::Return;
+  using testing::StrictMock;
+
+  auto offset = StrictMock<MockOffset<int>>{};
+  auto coeffs = StrictMock<MockCoeffs<int, decltype(offset)>>{};
 
   int x = 123;
-
-  using testing::Return;
 
   {
     // WITH OFFSET
     testing::InSequence seq;
+
+#ifndef NDEBUG
+    EXPECT_CALL(coeffs, IsValid(Ref(offset)))
+        .Times(1)
+        .WillOnce(Return(true))
+        .RetiresOnSaturation();
+
+    EXPECT_CALL(coeffs, Accepts(x))
+        .Times(1)
+        .WillOnce(Return(true))
+        .RetiresOnSaturation();
+#endif
 
     // (coeffs * x) -> 321
     EXPECT_CALL(coeffs, Multiplication(x, ArgSide::Right))
@@ -397,6 +411,19 @@ TEST(TestLinearModel, Solve) {
 
   {
     // NO OFFSET
+#ifndef NDEBUG
+    testing::InSequence seq;
+
+    EXPECT_CALL(coeffs, IsValid())
+        .Times(1)
+        .WillOnce(Return(true))
+        .RetiresOnSaturation();
+
+    EXPECT_CALL(coeffs, Accepts(x))
+        .Times(1)
+        .WillOnce(Return(true))
+        .RetiresOnSaturation();
+#endif
 
     // (coeffs * x) -> 456
     EXPECT_CALL(coeffs, Multiplication(x, ArgSide::Right))
@@ -406,6 +433,22 @@ TEST(TestLinearModel, Solve) {
 
     EXPECT_EQ(456, Solve(ForwardAsLinearModel(coeffs), x));
   }
+
+  ON_CALL(coeffs, Multiplication(_, _)).WillByDefault(Return(-1));
+  EXPECT_DEBUG_DEATH(
+      {
+        ON_CALL(coeffs, IsValid()).WillByDefault(Return(true));
+        ON_CALL(coeffs, Accepts(_)).WillByDefault(Return(false));
+        Solve(ForwardAsLinearModel(coeffs), x);
+      },
+      "Accepts\\(m, x\\)");
+
+  EXPECT_DEBUG_DEATH(
+      {
+        ON_CALL(coeffs, IsValid()).WillByDefault(Return(false));
+        Solve(ForwardAsLinearModel(coeffs), x);
+      },
+      "IsValid\\(m\\)");
 }
 
 }  // namespace
