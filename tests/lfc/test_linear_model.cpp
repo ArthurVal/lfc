@@ -1,8 +1,14 @@
 #include <type_traits>
 
-#include "gtest/gtest.h"
+// lfc
 #include "lfc/linear_model.hpp"
+
+// test utils
 #include "tests/mocks/arithmetic.hpp"
+#include "tests/mocks/linear_model.hpp"
+
+// gtest
+#include "gtest/gtest.h"
 
 namespace lfc {
 namespace {
@@ -217,33 +223,10 @@ TEST(TestLinearModel, Forward) {
                      LinearModel<int&&, char&&>>);
 }
 
-template <class OffsetType>
-struct MockIsValid {
-  MOCK_METHOD(bool, IsValid, (const OffsetType&), ());
-  friend constexpr auto IsValid(MockIsValid& m, const OffsetType& o) -> bool {
-    return m.IsValid(o);
-  }
-
-  MOCK_METHOD(bool, IsValid, (const OffsetType&), (const));
-  friend constexpr auto IsValid(const MockIsValid& m,
-                                const OffsetType& o) -> bool {
-    return m.IsValid(o);
-  }
-
-  MOCK_METHOD(bool, IsValidWithoutOffset, (), ());
-  friend constexpr auto IsValid(MockIsValid& m) -> bool {
-    return m.IsValidWithoutOffset();
-  }
-
-  MOCK_METHOD(bool, IsValidWithoutOffset, (), (const));
-  friend constexpr auto IsValid(const MockIsValid& m) -> bool {
-    return m.IsValidWithoutOffset();
-  }
-};
-
 TEST(TestLinearModel, IsValid) {
   using testing::Const;
   using testing::Return;
+  using tests::MockIsValid;
 
   {
     auto model = MakeLinearModel(1, 2);
@@ -317,21 +300,9 @@ TEST(TestLinearModel, IsValid) {
   }
 }
 
-template <class T>
-struct MockAccepts {
-  MOCK_METHOD(bool, Accepts, (const T&), ());
-  friend constexpr auto Accepts(MockAccepts& m, const T& t) -> bool {
-    return m.Accepts(t);
-  }
-
-  MOCK_METHOD(bool, Accepts, (const T&), (const));
-  friend constexpr auto Accepts(const MockAccepts& m, const T& t) -> bool {
-    return m.Accepts(t);
-  }
-};
-
 TEST(TestLinearModel, Accepts) {
   using testing::Return;
+  using tests::MockAccepts;
 
   {
     auto model = MakeLinearModel(1, 2);

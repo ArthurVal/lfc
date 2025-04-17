@@ -2,6 +2,12 @@ add_executable(tests-${PROJECT_NAME}
   test_linear_model.cpp
 )
 
+target_include_directories(tests-${PROJECT_NAME}
+  PRIVATE
+  $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}>
+  $<BUILD_INTERFACE:${CMAKE_CURRENT_BINARY_DIR}>
+)
+
 target_link_libraries(tests-${PROJECT_NAME}
   PRIVATE ${PROJECT_NAME}::${PROJECT_NAME}
   PRIVATE ${PROJECT_NAME}-tests-utils
