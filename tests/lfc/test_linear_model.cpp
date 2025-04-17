@@ -217,12 +217,124 @@ TEST(TestLinearModel, Forward) {
                      LinearModel<int&&, char&&>>);
 }
 
-TEST(TestLinearModel, HasOffset) {
-  static_assert(!HasOffset(MakeLinearModel(1)));
-  static_assert(HasOffset(MakeLinearModel(1, 2)));
+template <class T>
+struct IsValidMock {
+  MOCK_METHOD(bool, IsValid, (T), (const));
+  friend constexpr auto IsValid(const IsValidMock& m, T o) -> bool {
+    return m.IsValid(o);
+  }
 
-  EXPECT_FALSE(HasOffset(MakeLinearModel(1)));
-  EXPECT_TRUE(HasOffset(MakeLinearModel(1, 2)));
+  MOCK_METHOD(bool, IsValidWithoutOffset, (), (const));
+  friend constexpr auto IsValid(const IsValidMock& m) -> bool {
+    return m.IsValidWithoutOffset();
+  }
+};
+
+TEST(TestLinearModel, IsValid) {
+  using testing::Return;
+
+  {
+    auto model = MakeLinearModel(1, 2);
+
+    using model_traits = LinearModelTraits<decltype(model)>;
+    static_assert(!model_traits::HasIsValid());
+
+    EXPECT_TRUE(IsValid(model));
+  }
+
+  {
+    auto model = MakeLinearModel(1);
+
+    using model_traits = LinearModelTraits<decltype(model)>;
+    static_assert(!model_traits::HasIsValid());
+
+    EXPECT_TRUE(IsValid(model));
+  }
+
+  using testing::StrictMock;
+  auto coeffs = StrictMock<IsValidMock<int>>{};
+
+  {
+    auto model = TieAsLinearModel(coeffs);
+
+    using model_traits = LinearModelTraits<decltype(model)>;
+    static_assert(model_traits::HasIsValid());
+
+    EXPECT_CALL(coeffs, IsValidWithoutOffset())
+        .Times(2)
+        .WillOnce(Return(true))
+        .WillOnce(Return(false))
+        .RetiresOnSaturation();
+
+    EXPECT_TRUE(IsValid(model));
+    EXPECT_FALSE(IsValid(model));
+  }
+
+  {
+    auto offset = 2;
+    auto model = MakeLinearModel(std::cref(coeffs), offset);
+
+    using model_traits = LinearModelTraits<decltype(model)>;
+    static_assert(model_traits::HasIsValid());
+
+    EXPECT_CALL(coeffs, IsValid(offset))
+        .Times(2)
+        .WillOnce(Return(false))
+        .WillOnce(Return(true))
+        .RetiresOnSaturation();
+
+    EXPECT_FALSE(IsValid(model));
+    EXPECT_TRUE(IsValid(model));
+  }
+}
+
+template <class T>
+struct AcceptsMock {
+  MOCK_METHOD(bool, Accepts, (T), (const));
+  friend constexpr auto Accepts(const AcceptsMock& m, T t) -> bool {
+    return m.Accepts(t);
+  }
+};
+
+TEST(TestLinearModel, Accepts) {
+  using testing::Return;
+
+  {
+    auto model = MakeLinearModel(1, 2);
+
+    using model_traits = LinearModelTraits<decltype(model)>;
+    static_assert(!model_traits::HasAccepts<int>());
+
+    EXPECT_TRUE(Accepts(model, 3));
+  }
+
+  {
+    auto model = MakeLinearModel(1);
+
+    using model_traits = LinearModelTraits<decltype(model)>;
+    static_assert(!model_traits::HasAccepts<int>());
+
+    EXPECT_TRUE(Accepts(model, 3));
+  }
+
+  using testing::StrictMock;
+  auto coeffs = StrictMock<AcceptsMock<int>>{};
+
+  {
+    auto model = TieAsLinearModel(coeffs);
+
+    using model_traits = LinearModelTraits<decltype(model)>;
+    static_assert(model_traits::HasAccepts<int>());
+
+    EXPECT_CALL(coeffs, Accepts(4))
+        .Times(2)
+        .WillOnce(Return(true))
+        .WillOnce(Return(false))
+        .RetiresOnSaturation();
+
+    EXPECT_TRUE(Accepts(model, 4));
+    EXPECT_FALSE(Accepts(model, 4));
+  }
 }
 
 TEST(TestLinearModel, Solve) {
