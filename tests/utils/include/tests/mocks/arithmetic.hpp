@@ -132,7 +132,7 @@ struct MockMultiplication {
     return *this;
   }
 
-  friend constexpr auto operator/=(T& value, MockMultiplication& m) -> T& {
+  friend constexpr auto operator*=(T& value, MockMultiplication& m) -> T& {
     if constexpr (std::is_assignable_v<T, R>) {
       value = m.Multiplication(value, ArgSide::Left);
     } else {
@@ -141,7 +141,7 @@ struct MockMultiplication {
     return value;
   }
 
-  friend constexpr auto operator/=(T& value,
+  friend constexpr auto operator*=(T& value,
                                    const MockMultiplication& m) -> T& {
     if constexpr (std::is_assignable_v<T, R>) {
       value = m.Multiplication(value, ArgSide::Left);
