@@ -1,13 +1,14 @@
 #pragma once
 
+#include "arithmetic.hpp"
 #include "gmock/gmock.h"
 
 namespace tests {
 
-template <class OffsetType>
+template <class OffsetType = void>
 struct MockIsValid {
   MOCK_METHOD(bool, IsValid, (const OffsetType&), ());
-  friend constexpr auto IsValid(MockIsValid& m, const OffsetType& o) -> bool {
+  friend inline auto IsValid(MockIsValid& m, const OffsetType& o) -> bool {
     return m.IsValid(o);
   }
 
@@ -17,14 +18,23 @@ struct MockIsValid {
     return m.IsValid(o);
   }
 
-  MOCK_METHOD(bool, IsValidWithoutOffset, (), ());
-  friend constexpr auto IsValid(MockIsValid& m) -> bool {
-    return m.IsValidWithoutOffset();
-  }
+  MOCK_METHOD(bool, IsValid, (), ());
+  friend inline auto IsValid(MockIsValid& m) -> bool { return m.IsValid(); }
 
-  MOCK_METHOD(bool, IsValidWithoutOffset, (), (const));
-  friend constexpr auto IsValid(const MockIsValid& m) -> bool {
-    return m.IsValidWithoutOffset();
+  MOCK_METHOD(bool, IsValid, (), (const));
+  friend inline auto IsValid(const MockIsValid& m) -> bool {
+    return m.IsValid();
+  }
+};
+
+template <>
+struct MockIsValid<void> {
+  MOCK_METHOD(bool, IsValid, (), ());
+  friend inline auto IsValid(MockIsValid& m) -> bool { return m.IsValid(); }
+
+  MOCK_METHOD(bool, IsValid, (), (const));
+  friend inline auto IsValid(const MockIsValid& m) -> bool {
+    return m.IsValid();
   }
 };
 
@@ -40,5 +50,10 @@ struct MockAccepts {
     return m.Accepts(t);
   }
 };
+
+template <class T, class OffsetType = void>
+struct MockCoeffs : public MockIsValid<OffsetType>,
+                    public MockAccepts<T>,
+                    public MockMultiplication<T> {};
 
 }  // namespace tests

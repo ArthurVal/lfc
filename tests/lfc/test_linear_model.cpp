@@ -255,7 +255,7 @@ TEST(TestLinearModel, IsValid) {
     using model_traits = LinearModelTraits<decltype(model)>;
     static_assert(model_traits::HasIsValid());
 
-    EXPECT_CALL(coeffs, IsValidWithoutOffset())
+    EXPECT_CALL(coeffs, IsValid())
         .Times(2)
         .WillOnce(Return(true))
         .WillOnce(Return(false))
