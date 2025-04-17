@@ -340,10 +340,11 @@ TEST(TestLinearModel, Accepts) {
 TEST(TestLinearModel, Solve) {
   using testing::StrictMock;
   using tests::ArgSide;
-  using tests::ArithmeticMock;
+  using tests::MockAddition;
+  using tests::MockMultiplication;
 
-  auto coeffs = StrictMock<ArithmeticMock<int, int>>{};
-  auto offset = StrictMock<ArithmeticMock<int, int>>{};
+  auto coeffs = StrictMock<MockMultiplication<int>>{};
+  auto offset = StrictMock<MockAddition<int>>{};
 
   int x = 123;
 
