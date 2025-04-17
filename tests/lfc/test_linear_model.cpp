@@ -13,7 +13,7 @@
 namespace lfc {
 namespace {
 
-TEST(TestLinearModel, Make) {
+TEST(LinearModelTest, Make) {
   static_assert(std::is_same_v<decltype(MakeLinearModel(std::declval<int>())),
                                LinearModel<int, void>>);
 
@@ -129,7 +129,7 @@ TEST(TestLinearModel, Make) {
   }
 }
 
-TEST(TestLinearModel, Tie) {
+TEST(LinearModelTest, Tie) {
   static_assert(
       std::is_same_v<decltype(TieAsLinearModel(std::declval<int&>(),
                                                std::declval<char&>())),
@@ -172,7 +172,7 @@ TEST(TestLinearModel, Tie) {
   }
 }
 
-TEST(TestLinearModel, Forward) {
+TEST(LinearModelTest, Forward) {
   static_assert(
       std::is_same_v<decltype(ForwardAsLinearModel(std::declval<int>())),
                      LinearModel<int&&, void>>);
@@ -223,7 +223,7 @@ TEST(TestLinearModel, Forward) {
                      LinearModel<int&&, char&&>>);
 }
 
-TEST(TestLinearModel, IsValid) {
+TEST(LinearModelTest, IsValid) {
   using testing::Const;
   using testing::Return;
   using tests::MockIsValid;
@@ -300,7 +300,7 @@ TEST(TestLinearModel, IsValid) {
   }
 }
 
-TEST(TestLinearModel, Accepts) {
+TEST(LinearModelTest, Accepts) {
   using testing::Return;
   using tests::MockAccepts;
 
@@ -362,12 +362,11 @@ TEST(TestLinearModel, Accepts) {
   }
 }
 
-TEST(TestLinearModel, Solve) {
+TEST(LinearModelTest, Solve) {
   using tests::ArgSide;
   using tests::MockCoeffs;
   using tests::MockOffset;
 
-  using testing::_;
   using testing::Ref;
   using testing::Return;
   using testing::StrictMock;
@@ -433,8 +432,24 @@ TEST(TestLinearModel, Solve) {
 
     EXPECT_EQ(456, Solve(ForwardAsLinearModel(coeffs), x));
   }
+}
+
+TEST(LinearModelDeathTest, SolvePreconditions) {
+  using testing::_;
+  using testing::Return;
+  using tests::MockCoeffs;
+
+  auto coeffs = MockCoeffs<int>{};
+  int x = 123;
 
   ON_CALL(coeffs, Multiplication(_, _)).WillByDefault(Return(-1));
+  EXPECT_DEBUG_DEATH(
+      {
+        ON_CALL(coeffs, IsValid()).WillByDefault(Return(false));
+        Solve(ForwardAsLinearModel(coeffs), x);
+      },
+      "IsValid\\(m\\)");
+
   EXPECT_DEBUG_DEATH(
       {
         ON_CALL(coeffs, IsValid()).WillByDefault(Return(true));
@@ -442,13 +457,6 @@ TEST(TestLinearModel, Solve) {
         Solve(ForwardAsLinearModel(coeffs), x);
       },
       "Accepts\\(m, x\\)");
-
-  EXPECT_DEBUG_DEATH(
-      {
-        ON_CALL(coeffs, IsValid()).WillByDefault(Return(false));
-        Solve(ForwardAsLinearModel(coeffs), x);
-      },
-      "IsValid\\(m\\)");
 }
 
 }  // namespace
