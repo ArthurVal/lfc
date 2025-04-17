@@ -32,8 +32,6 @@ inline auto operator<<(std::ostream& os, ArgSide side) -> std::ostream& {
 // Addition /////////////////////////////////////////////////////////////////
 template <class T, class R = T>
 struct MockAddition {
-  MOCK_METHOD(R, Addition, (T&, ArgSide), ());
-  MOCK_METHOD(R, Addition, (T&, ArgSide), (const));
   MOCK_METHOD(R, Addition, (const T&, ArgSide), ());
   MOCK_METHOD(R, Addition, (const T&, ArgSide), (const));
 
@@ -60,19 +58,21 @@ struct MockAddition {
     return value;
   }
 
-  friend constexpr auto operator+(MockAddition& mock, T value) -> R {
+  friend constexpr auto operator+(MockAddition& mock, const T& value) -> R {
     return mock.Addition(value, ArgSide::Right);
   }
 
-  friend constexpr auto operator+(const MockAddition& mock, T value) -> R {
+  friend constexpr auto operator+(const MockAddition& mock,
+                                  const T& value) -> R {
     return mock.Addition(value, ArgSide::Right);
   }
 
-  friend constexpr auto operator+(T value, MockAddition& mock) -> R {
+  friend constexpr auto operator+(const T& value, MockAddition& mock) -> R {
     return mock.Addition(value, ArgSide::Left);
   }
 
-  friend constexpr auto operator+(T value, const MockAddition& mock) -> R {
+  friend constexpr auto operator+(const T& value,
+                                  const MockAddition& mock) -> R {
     return mock.Addition(value, ArgSide::Left);
   }
 };
@@ -80,8 +80,6 @@ struct MockAddition {
 // Substraction /////////////////////////////////////////////////////////////
 template <class T, class R = T>
 struct MockSubstraction {
-  MOCK_METHOD(R, Substraction, (T&, ArgSide), ());
-  MOCK_METHOD(R, Substraction, (T&, ArgSide), (const));
   MOCK_METHOD(R, Substraction, (const T&, ArgSide), ());
   MOCK_METHOD(R, Substraction, (const T&, ArgSide), (const));
 
@@ -130,8 +128,6 @@ struct MockSubstraction {
 // Multiplication ///////////////////////////////////////////////////////////
 template <class T, class R = T>
 struct MockMultiplication {
-  MOCK_METHOD(R, Multiplication, (T&, ArgSide), ());
-  MOCK_METHOD(R, Multiplication, (T&, ArgSide), (const));
   MOCK_METHOD(R, Multiplication, (const T&, ArgSide), ());
   MOCK_METHOD(R, Multiplication, (const T&, ArgSide), (const));
 
@@ -183,8 +179,6 @@ struct MockMultiplication {
 // Division /////////////////////////////////////////////////////////////////
 template <class T, class R = T>
 struct MockDivision {
-  MOCK_METHOD(R, Division, (T&, ArgSide), ());
-  MOCK_METHOD(R, Division, (T&, ArgSide), (const));
   MOCK_METHOD(R, Division, (const T&, ArgSide), ());
   MOCK_METHOD(R, Division, (const T&, ArgSide), (const));
 
