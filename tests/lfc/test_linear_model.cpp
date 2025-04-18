@@ -12,6 +12,9 @@
 namespace lfc {
 namespace {
 
+using LinearModelMockedTest = tests::LinearModelFixture<int>;
+using LinearModelMockedDeathTest = LinearModelMockedTest;
+
 TEST(LinearModelTest, Make) {
   static_assert(std::is_same_v<decltype(MakeLinearModel(std::declval<int>())),
                                LinearModel<int, void>>);
@@ -221,8 +224,6 @@ TEST(LinearModelTest, Forward) {
                                                    std::declval<char&&>())),
                      LinearModel<int&&, char&&>>);
 }
-
-using LinearModelMockedTest = tests::LinearModelFixture<int>;
 
 TEST_F(LinearModelMockedTest, IsValid) {
   using testing::Const;
@@ -473,7 +474,6 @@ TEST_F(LinearModelMockedTest, TryToSolve) {
   }
 }
 
-using LinearModelMockedDeathTest = LinearModelMockedTest;
 TEST_F(LinearModelMockedDeathTest, SolvePreconditions) {
   using testing::_;
   using testing::Return;
