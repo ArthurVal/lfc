@@ -35,13 +35,12 @@ TEST(ConfigTest, VersionMatchesWithGit) {
   using testing::Eq;
 
   const auto git_version =
+    StdoutFrom(
 #ifdef PROJECT_GIT_LOCATION
-      StdoutFrom(
-          "cd " XSTR(PROJECT_GIT_LOCATION) " && git describe --abbrev=0 2>&1")
-          .value_or(std::strerror(errno));
-#else
-      StdoutFrom("git describe --abbrev=0 2>&1").value_or(std::strerror(errno));
+          "cd " XSTR(PROJECT_GIT_LOCATION) " && "
 #endif
+          "git describe --abbrev=0 2>&1")
+          .value_or(std::strerror(errno));
 
   EXPECT_THAT(git_version, Eq("v" lfc_VERSION_STR "\n"))
       << "Both version must match:"
