@@ -4,6 +4,7 @@ add_library(${PROJECT_NAME}-tests-utils
 
 target_link_libraries(${PROJECT_NAME}-tests-utils
   PUBLIC GTest::gtest GTest::gmock
+  PUBLIC ${PROJECT_NAME}::${PROJECT_NAME}
 )
 
 target_include_directories(${PROJECT_NAME}-tests-utils
