@@ -29,9 +29,8 @@ struct LinearModelFixture : public testing::Test {
     ON_CALL(coeffs_, IsValid(Ref(offset_))).WillByDefault(Return(true));
     ON_CALL(Const(coeffs_), IsValid(Ref(offset_))).WillByDefault(Return(true));
 
-    ON_CALL(coeffs_, Accepts(An<const T&>())).WillByDefault(Return(true));
-    ON_CALL(Const(coeffs_), Accepts(An<const T&>()))
-        .WillByDefault(Return(true));
+    ON_CALL(coeffs_, Accepts(An<T>())).WillByDefault(Return(true));
+    ON_CALL(Const(coeffs_), Accepts(An<T>())).WillByDefault(Return(true));
   }
 
   void SetUp() override {};
@@ -44,7 +43,7 @@ struct LinearModelFixture : public testing::Test {
     return lfc::MakeLinearModel(std::cref(coeffs_), std::ref(offset_));
   }
 
-  auto MockedConstModelWithoutOffset() {
+  auto MockedConstModelWithoutOffset() const {
     return lfc::MakeLinearModel(std::cref(coeffs_));
   }
 

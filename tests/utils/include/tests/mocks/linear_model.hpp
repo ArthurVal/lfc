@@ -7,14 +7,13 @@ namespace tests {
 
 template <class OffsetType = void>
 struct MockIsValid {
-  MOCK_METHOD(bool, IsValid, (const OffsetType&), ());
-  friend constexpr auto IsValid(MockIsValid& m, const OffsetType& o) -> bool {
+  MOCK_METHOD(bool, IsValid, (OffsetType), ());
+  friend constexpr auto IsValid(MockIsValid& m, OffsetType o) -> bool {
     return m.IsValid(o);
   }
 
-  MOCK_METHOD(bool, IsValid, (const OffsetType&), (const));
-  friend constexpr auto IsValid(const MockIsValid& m,
-                                const OffsetType& o) -> bool {
+  MOCK_METHOD(bool, IsValid, (OffsetType), (const));
+  friend constexpr auto IsValid(const MockIsValid& m, OffsetType o) -> bool {
     return m.IsValid(o);
   }
 
@@ -40,13 +39,13 @@ struct MockIsValid<void> {
 
 template <class T>
 struct MockAccepts {
-  MOCK_METHOD(bool, Accepts, (const T&), ());
-  friend constexpr auto Accepts(MockAccepts& m, const T& t) -> bool {
+  MOCK_METHOD(bool, Accepts, (T), ());
+  friend constexpr auto Accepts(MockAccepts& m, T t) -> bool {
     return m.Accepts(t);
   }
 
-  MOCK_METHOD(bool, Accepts, (const T&), (const));
-  friend constexpr auto Accepts(const MockAccepts& m, const T& t) -> bool {
+  MOCK_METHOD(bool, Accepts, (T), (const));
+  friend constexpr auto Accepts(const MockAccepts& m, T t) -> bool {
     return m.Accepts(t);
   }
 };
