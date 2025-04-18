@@ -459,5 +459,126 @@ TEST(LinearModelDeathTest, SolvePreconditions) {
       "Accepts\\(m, x\\)");
 }
 
+TEST(LinearModelTest, TryToSolve) {
+  using tests::ArgSide;
+  using tests::MockCoeffs;
+  using tests::MockOffset;
+
+  using testing::Ref;
+  using testing::Return;
+  using testing::StrictMock;
+
+  auto offset = StrictMock<MockOffset<int>>{};
+  auto coeffs = StrictMock<MockCoeffs<int, decltype(offset)>>{};
+
+  int x = 123;
+
+  {
+    // WITH OFFSET
+    testing::InSequence seq;
+
+    EXPECT_CALL(coeffs, IsValid(Ref(offset)))
+        .Times(1)
+        .WillOnce(Return(true))
+        .RetiresOnSaturation();
+
+    EXPECT_CALL(coeffs, Accepts(x))
+        .Times(1)
+        .WillOnce(Return(true))
+        .RetiresOnSaturation();
+
+#ifndef NDEBUG
+    EXPECT_CALL(coeffs, IsValid(Ref(offset)))
+        .Times(1)
+        .WillOnce(Return(true))
+        .RetiresOnSaturation();
+
+    EXPECT_CALL(coeffs, Accepts(x))
+        .Times(1)
+        .WillOnce(Return(true))
+        .RetiresOnSaturation();
+#endif
+
+    // (coeffs * x) -> 321
+    EXPECT_CALL(coeffs, Multiplication(x, ArgSide::Right))
+        .Times(1)
+        .WillOnce(Return(321))
+        .RetiresOnSaturation();
+
+    // offset + (coeffs * x)
+    // offset + 321 -> -1
+    EXPECT_CALL(offset, Addition(321, ArgSide::Right))
+        .Times(1)
+        .WillOnce(Return(-1))
+        .RetiresOnSaturation();
+
+    EXPECT_EQ(-1, TryToSolve(ForwardAsLinearModel(coeffs, offset), x));
+  }
+
+  {
+    // NO OFFSET
+    testing::InSequence seq;
+
+    EXPECT_CALL(coeffs, IsValid())
+        .Times(1)
+        .WillOnce(Return(true))
+        .RetiresOnSaturation();
+
+    EXPECT_CALL(coeffs, Accepts(x))
+        .Times(1)
+        .WillOnce(Return(true))
+        .RetiresOnSaturation();
+
+#ifndef NDEBUG
+    EXPECT_CALL(coeffs, IsValid())
+        .Times(1)
+        .WillOnce(Return(true))
+        .RetiresOnSaturation();
+
+    EXPECT_CALL(coeffs, Accepts(x))
+        .Times(1)
+        .WillOnce(Return(true))
+        .RetiresOnSaturation();
+#endif
+
+    // (coeffs * x) -> 321
+    EXPECT_CALL(coeffs, Multiplication(x, ArgSide::Right))
+        .Times(1)
+        .WillOnce(Return(321))
+        .RetiresOnSaturation();
+
+    EXPECT_EQ(321, TryToSolve(ForwardAsLinearModel(coeffs), x));
+  }
+
+  {
+    // IsValid fails
+    testing::InSequence seq;
+
+    EXPECT_CALL(coeffs, IsValid())
+        .Times(1)
+        .WillOnce(Return(false))
+        .RetiresOnSaturation();
+
+    EXPECT_EQ(std::nullopt, TryToSolve(ForwardAsLinearModel(coeffs), x));
+  }
+
+  {
+    // Accepts fails
+    testing::InSequence seq;
+
+    EXPECT_CALL(coeffs, IsValid())
+        .Times(1)
+        .WillOnce(Return(true))
+        .RetiresOnSaturation();
+
+    EXPECT_CALL(coeffs, Accepts(x))
+        .Times(1)
+        .WillOnce(Return(false))
+        .RetiresOnSaturation();
+
+    EXPECT_EQ(std::nullopt, TryToSolve(ForwardAsLinearModel(coeffs), x));
+  }
+}
+
 }  // namespace
 }  // namespace lfc
