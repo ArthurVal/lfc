@@ -4,8 +4,7 @@
 #include "lfc/linear_model.hpp"
 
 // test utils
-#include "tests/mocks/arithmetic.hpp"
-#include "tests/mocks/linear_model.hpp"
+#include "tests/fixtures/linear_model.hpp"
 
 // gtest
 #include "gtest/gtest.h"
@@ -223,10 +222,12 @@ TEST(LinearModelTest, Forward) {
                      LinearModel<int&&, char&&>>);
 }
 
-TEST(LinearModelTest, IsValid) {
+using LinearModelMockedTest = tests::LinearModelFixture<int>;
+
+TEST_F(LinearModelMockedTest, IsValid) {
   using testing::Const;
+  using testing::Ref;
   using testing::Return;
-  using tests::MockIsValid;
 
   {
     auto model = MakeLinearModel(1, 2);
@@ -246,16 +247,13 @@ TEST(LinearModelTest, IsValid) {
     EXPECT_TRUE(IsValid(model));
   }
 
-  using testing::StrictMock;
-  auto coeffs = StrictMock<MockIsValid<int>>{};
-
   {
-    auto model = TieAsLinearModel(coeffs);
+    auto model = MockedModelWithoutOffset();
 
     using model_traits = LinearModelTraits<decltype(model)>;
     static_assert(model_traits::HasIsValid());
 
-    EXPECT_CALL(coeffs, IsValid())
+    EXPECT_CALL(model.coeffs, IsValid())
         .Times(2)
         .WillOnce(Return(true))
         .WillOnce(Return(false))
@@ -266,13 +264,12 @@ TEST(LinearModelTest, IsValid) {
   }
 
   {
-    auto offset = 2;
-    auto model = MakeLinearModel(std::ref(coeffs), offset);
+    auto model = MockedModel();
 
-    using model_traits = LinearModelTraits<decltype(model)>;
+    using model_traits = LinearModelTraits<std::decay_t<decltype(model)>>;
     static_assert(model_traits::HasIsValid());
 
-    EXPECT_CALL(coeffs, IsValid(offset))
+    EXPECT_CALL(model.coeffs, IsValid(Ref(model.offset)))
         .Times(2)
         .WillOnce(Return(false))
         .WillOnce(Return(true))
@@ -283,13 +280,12 @@ TEST(LinearModelTest, IsValid) {
   }
 
   {
-    auto offset = 3;
-    auto model = MakeLinearModel(std::cref(coeffs), offset);
+    auto model = MockedConstModelWithoutOffset();
 
     using model_traits = LinearModelTraits<decltype(model)>;
     static_assert(model_traits::HasIsValid());
 
-    EXPECT_CALL(Const(coeffs), IsValid(offset))
+    EXPECT_CALL(model.coeffs, IsValid())
         .Times(2)
         .WillOnce(Return(true))
         .WillOnce(Return(false))
@@ -300,9 +296,10 @@ TEST(LinearModelTest, IsValid) {
   }
 }
 
-TEST(LinearModelTest, Accepts) {
+TEST_F(LinearModelMockedTest, Accepts) {
+  using testing::Const;
+  using testing::Ref;
   using testing::Return;
-  using tests::MockAccepts;
 
   {
     auto model = MakeLinearModel(1, 2);
@@ -322,18 +319,15 @@ TEST(LinearModelTest, Accepts) {
     EXPECT_TRUE(Accepts(model, 3));
   }
 
-  using testing::StrictMock;
-  auto coeffs = StrictMock<MockAccepts<int>>{};
-
   {
-    auto model = MakeLinearModel(std::ref(coeffs));
-    auto x = 4;
+    auto model = MockedModelWithoutOffset();
+    input_t x = 4;
 
     using model_traits = LinearModelTraits<decltype(model)>;
     static_assert(model_traits::HasAccepts<int>());
     static_assert(!model_traits::HasAccepts<std::string>());
 
-    EXPECT_CALL(coeffs, Accepts(x))
+    EXPECT_CALL(model.coeffs, Accepts(x))
         .Times(2)
         .WillOnce(Return(true))
         .WillOnce(Return(false))
@@ -344,14 +338,14 @@ TEST(LinearModelTest, Accepts) {
   }
 
   {
-    auto model = MakeLinearModel(std::cref(coeffs));
-    auto x = 5;
+    auto model = MockedConstModelWithoutOffset();
+    input_t x = 5;
 
     using model_traits = LinearModelTraits<decltype(model)>;
     static_assert(model_traits::HasAccepts<int>());
     static_assert(!model_traits::HasAccepts<const char*>());
 
-    EXPECT_CALL(Const(coeffs), Accepts(x))
+    EXPECT_CALL(model.coeffs, Accepts(x))
         .Times(2)
         .WillOnce(Return(false))
         .WillOnce(Return(true))
@@ -362,222 +356,145 @@ TEST(LinearModelTest, Accepts) {
   }
 }
 
-TEST(LinearModelTest, Solve) {
-  using tests::ArgSide;
-  using tests::MockCoeffs;
-  using tests::MockOffset;
-
+TEST_F(LinearModelMockedTest, Solve) {
   using testing::Ref;
   using testing::Return;
-  using testing::StrictMock;
+  using tests::ArgSide;
 
-  auto offset = StrictMock<MockOffset<int>>{};
-  auto coeffs = StrictMock<MockCoeffs<int, decltype(offset)>>{};
-
-  int x = 123;
+  input_t x = 123;
 
   {
     // WITH OFFSET
+    auto model = MockedModel();
     testing::InSequence seq;
 
-#ifndef NDEBUG
-    EXPECT_CALL(coeffs, IsValid(Ref(offset)))
-        .Times(1)
-        .WillOnce(Return(true))
-        .RetiresOnSaturation();
-
-    EXPECT_CALL(coeffs, Accepts(x))
-        .Times(1)
-        .WillOnce(Return(true))
-        .RetiresOnSaturation();
-#endif
-
     // (coeffs * x) -> 321
-    EXPECT_CALL(coeffs, Multiplication(x, ArgSide::Right))
+    EXPECT_CALL(model.coeffs, Multiplication(x, ArgSide::Right))
         .Times(1)
         .WillOnce(Return(321))
         .RetiresOnSaturation();
 
     // offset + (coeffs * x)
     // offset + 321 -> -1
-    EXPECT_CALL(offset, Addition(321, ArgSide::Right))
+    EXPECT_CALL(model.offset, Addition(321, ArgSide::Right))
         .Times(1)
         .WillOnce(Return(-1))
         .RetiresOnSaturation();
 
-    EXPECT_EQ(-1, Solve(ForwardAsLinearModel(coeffs, offset), x));
+    EXPECT_EQ(-1, Solve(model, x));
   }
 
   {
     // NO OFFSET
-#ifndef NDEBUG
-    testing::InSequence seq;
-
-    EXPECT_CALL(coeffs, IsValid())
-        .Times(1)
-        .WillOnce(Return(true))
-        .RetiresOnSaturation();
-
-    EXPECT_CALL(coeffs, Accepts(x))
-        .Times(1)
-        .WillOnce(Return(true))
-        .RetiresOnSaturation();
-#endif
+    auto model = MockedModelWithoutOffset();
 
     // (coeffs * x) -> 456
-    EXPECT_CALL(coeffs, Multiplication(x, ArgSide::Right))
+    EXPECT_CALL(model.coeffs, Multiplication(x, ArgSide::Right))
         .Times(1)
         .WillOnce(Return(456))
         .RetiresOnSaturation();
 
-    EXPECT_EQ(456, Solve(ForwardAsLinearModel(coeffs), x));
+    EXPECT_EQ(456, Solve(model, x));
   }
 }
 
-TEST(LinearModelDeathTest, SolvePreconditions) {
+TEST_F(LinearModelMockedTest, TryToSolve) {
+  using tests::ArgSide;
+
+  using testing::Ref;
+  using testing::Return;
+
+  input_t x = 123;
+
+  {
+    // WITH OFFSET
+    auto model = MockedModel();
+    testing::InSequence seq;
+
+    // (coeffs * x) -> 321
+    EXPECT_CALL(model.coeffs, Multiplication(x, ArgSide::Right))
+        .Times(1)
+        .WillOnce(Return(321))
+        .RetiresOnSaturation();
+
+    // offset + (coeffs * x)
+    // offset + 321 -> -1
+    EXPECT_CALL(model.offset, Addition(321, ArgSide::Right))
+        .Times(1)
+        .WillOnce(Return(-1))
+        .RetiresOnSaturation();
+
+    EXPECT_EQ(-1, TryToSolve(model, x));
+  }
+
+  {
+    // NO OFFSET
+    auto model = MockedModelWithoutOffset();
+    testing::InSequence seq;
+
+    // (coeffs * x) -> 321
+    EXPECT_CALL(model.coeffs, Multiplication(x, ArgSide::Right))
+        .Times(1)
+        .WillOnce(Return(321))
+        .RetiresOnSaturation();
+
+    EXPECT_EQ(321, TryToSolve(model, x));
+  }
+
+  {
+    // IsValid fails
+    auto model = MockedModelWithoutOffset();
+    testing::InSequence seq;
+
+    EXPECT_CALL(model.coeffs, IsValid())
+        .Times(1)
+        .WillOnce(Return(false))
+        .RetiresOnSaturation();
+
+    EXPECT_EQ(std::nullopt, TryToSolve(model, x));
+  }
+
+  {
+    // Accepts fails
+    auto model = MockedModelWithoutOffset();
+    testing::InSequence seq;
+
+    EXPECT_CALL(model.coeffs, IsValid())
+        .Times(1)
+        .WillOnce(Return(true))
+        .RetiresOnSaturation();
+
+    EXPECT_CALL(model.coeffs, Accepts(x))
+        .Times(1)
+        .WillOnce(Return(false))
+        .RetiresOnSaturation();
+
+    EXPECT_EQ(std::nullopt, TryToSolve(model, x));
+  }
+}
+
+using LinearModelMockedDeathTest = LinearModelMockedTest;
+TEST_F(LinearModelMockedDeathTest, SolvePreconditions) {
   using testing::_;
   using testing::Return;
-  using tests::MockCoeffs;
 
-  auto coeffs = MockCoeffs<int>{};
-  int x = 123;
+  auto model = MockedModelWithoutOffset();
+  ON_CALL(model.coeffs, Multiplication(_, _)).WillByDefault(Return(-1));
 
-  ON_CALL(coeffs, Multiplication(_, _)).WillByDefault(Return(-1));
   EXPECT_DEBUG_DEATH(
       {
-        ON_CALL(coeffs, IsValid()).WillByDefault(Return(false));
-        Solve(ForwardAsLinearModel(coeffs), x);
+        ON_CALL(model.coeffs, IsValid()).WillByDefault(Return(false));
+        Solve(model, input_t{});
       },
       "IsValid\\(m\\)");
 
   EXPECT_DEBUG_DEATH(
       {
-        ON_CALL(coeffs, IsValid()).WillByDefault(Return(true));
-        ON_CALL(coeffs, Accepts(_)).WillByDefault(Return(false));
-        Solve(ForwardAsLinearModel(coeffs), x);
+        ON_CALL(model.coeffs, IsValid()).WillByDefault(Return(true));
+        ON_CALL(model.coeffs, Accepts(_)).WillByDefault(Return(false));
+        Solve(model, input_t{});
       },
       "Accepts\\(m, x\\)");
-}
-
-TEST(LinearModelTest, TryToSolve) {
-  using tests::ArgSide;
-  using tests::MockCoeffs;
-  using tests::MockOffset;
-
-  using testing::Ref;
-  using testing::Return;
-  using testing::StrictMock;
-
-  auto offset = StrictMock<MockOffset<int>>{};
-  auto coeffs = StrictMock<MockCoeffs<int, decltype(offset)>>{};
-
-  int x = 123;
-
-  {
-    // WITH OFFSET
-    testing::InSequence seq;
-
-    EXPECT_CALL(coeffs, IsValid(Ref(offset)))
-        .Times(1)
-        .WillOnce(Return(true))
-        .RetiresOnSaturation();
-
-    EXPECT_CALL(coeffs, Accepts(x))
-        .Times(1)
-        .WillOnce(Return(true))
-        .RetiresOnSaturation();
-
-#ifndef NDEBUG
-    EXPECT_CALL(coeffs, IsValid(Ref(offset)))
-        .Times(1)
-        .WillOnce(Return(true))
-        .RetiresOnSaturation();
-
-    EXPECT_CALL(coeffs, Accepts(x))
-        .Times(1)
-        .WillOnce(Return(true))
-        .RetiresOnSaturation();
-#endif
-
-    // (coeffs * x) -> 321
-    EXPECT_CALL(coeffs, Multiplication(x, ArgSide::Right))
-        .Times(1)
-        .WillOnce(Return(321))
-        .RetiresOnSaturation();
-
-    // offset + (coeffs * x)
-    // offset + 321 -> -1
-    EXPECT_CALL(offset, Addition(321, ArgSide::Right))
-        .Times(1)
-        .WillOnce(Return(-1))
-        .RetiresOnSaturation();
-
-    EXPECT_EQ(-1, TryToSolve(ForwardAsLinearModel(coeffs, offset), x));
-  }
-
-  {
-    // NO OFFSET
-    testing::InSequence seq;
-
-    EXPECT_CALL(coeffs, IsValid())
-        .Times(1)
-        .WillOnce(Return(true))
-        .RetiresOnSaturation();
-
-    EXPECT_CALL(coeffs, Accepts(x))
-        .Times(1)
-        .WillOnce(Return(true))
-        .RetiresOnSaturation();
-
-#ifndef NDEBUG
-    EXPECT_CALL(coeffs, IsValid())
-        .Times(1)
-        .WillOnce(Return(true))
-        .RetiresOnSaturation();
-
-    EXPECT_CALL(coeffs, Accepts(x))
-        .Times(1)
-        .WillOnce(Return(true))
-        .RetiresOnSaturation();
-#endif
-
-    // (coeffs * x) -> 321
-    EXPECT_CALL(coeffs, Multiplication(x, ArgSide::Right))
-        .Times(1)
-        .WillOnce(Return(321))
-        .RetiresOnSaturation();
-
-    EXPECT_EQ(321, TryToSolve(ForwardAsLinearModel(coeffs), x));
-  }
-
-  {
-    // IsValid fails
-    testing::InSequence seq;
-
-    EXPECT_CALL(coeffs, IsValid())
-        .Times(1)
-        .WillOnce(Return(false))
-        .RetiresOnSaturation();
-
-    EXPECT_EQ(std::nullopt, TryToSolve(ForwardAsLinearModel(coeffs), x));
-  }
-
-  {
-    // Accepts fails
-    testing::InSequence seq;
-
-    EXPECT_CALL(coeffs, IsValid())
-        .Times(1)
-        .WillOnce(Return(true))
-        .RetiresOnSaturation();
-
-    EXPECT_CALL(coeffs, Accepts(x))
-        .Times(1)
-        .WillOnce(Return(false))
-        .RetiresOnSaturation();
-
-    EXPECT_EQ(std::nullopt, TryToSolve(ForwardAsLinearModel(coeffs), x));
-  }
 }
 
 }  // namespace
