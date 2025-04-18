@@ -3,6 +3,11 @@ add_executable(tests-${PROJECT_NAME}
   test_linear_model.cpp
 )
 
+target_compile_definitions(tests-${PROJECT_NAME}
+  PRIVATE
+  PROJECT_GIT_LOCATION=${PROJECT_SOURCE_DIR}
+)
+
 target_include_directories(tests-${PROJECT_NAME}
   PRIVATE
   $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}>

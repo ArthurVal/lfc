@@ -6,6 +6,7 @@ project(lfc
   LANGUAGES CXX
 )
 
+include(GNUInstallDirs)
 include(cmake/utils.cmake)
 utils_disable_in_source_builds()
 utils_if_build_type_missing(DEFAULT_TO Release)
@@ -37,7 +38,7 @@ install(
   $<BUILD_INTERFACE:${PROJECT_BINARY_DIR}/include/>
   DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}
   PATTERN "*.in" EXCLUDE
-  PATTERN "*.h"
+  PATTERN "*.hpp"
 )
 
 if(BUILD_TESTING OR ${PROJECT_NAME}_ENABLE_TESTING)
