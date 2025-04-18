@@ -40,10 +40,9 @@ auto FileToString(std::FILE& file,
   return output;
 }
 
-auto GetGitVersion() -> std::optional<std::string> {
+auto GetStdoutFromCmd(const char* cmd) -> std::optional<std::string> {
   std::optional<std::string> res = std::nullopt;
 
-  constexpr const char cmd[] = "git describe --abbrev=0 2>&1";
   if (auto pipe = PipeOpen(cmd, "r")) {
     res = FileToString(*pipe, (1 << 8));
   }
@@ -53,7 +52,8 @@ auto GetGitVersion() -> std::optional<std::string> {
 
 TEST(ConfigTest, VersionMatchesWithGit) {
   using testing::ContainsRegex;
-  EXPECT_THAT(GetGitVersion().value_or(std::strerror(errno)),
+  EXPECT_THAT(GetStdoutFromCmd("git describe --abbrev=0 2>&1")
+                  .value_or(std::strerror(errno)),
               ContainsRegex("v" lfc_VERSION_STR));
 }
 
