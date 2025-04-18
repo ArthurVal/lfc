@@ -15,7 +15,7 @@
 namespace lfc {
 namespace {
 
-auto GetStdoutFromCmd(const char* cmd) -> std::optional<std::string> {
+auto StdoutFrom(const char* cmd) -> std::optional<std::string> {
   using tests::FileToString;
   using tests::PipeOpen;
 
@@ -30,9 +30,9 @@ auto GetStdoutFromCmd(const char* cmd) -> std::optional<std::string> {
 
 TEST(ConfigTest, VersionMatchesWithGit) {
   using testing::ContainsRegex;
-  EXPECT_THAT(GetStdoutFromCmd("git describe --abbrev=0 2>&1")
-                  .value_or(std::strerror(errno)),
-              ContainsRegex("v" lfc_VERSION_STR));
+  EXPECT_THAT(
+      StdoutFrom("git describe --abbrev=0 2>&1").value_or(std::strerror(errno)),
+      ContainsRegex("v" lfc_VERSION_STR));
 }
 
 }  // namespace
