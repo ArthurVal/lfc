@@ -10,14 +10,24 @@ include(cmake/utils.cmake)
 utils_disable_in_source_builds()
 utils_if_build_type_missing(DEFAULT_TO Release)
 
-configure_file(
-  include/${PROJECT_NAME}/version.h.in
-  include/${PROJECT_NAME}/version.h
-  @ONLY
+# OPTIONS #####################################################################
+option(${PROJECT_NAME}_ENABLE_TESTING
+  "Enable unit tests build of ${PROJECT_NAME}"
+  OFF
+)
+cmake_print_variables(
+  BUILD_TESTING
+  ${PROJECT_NAME}_ENABLE_TESTING
 )
 
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
+
+configure_file(
+  include/${PROJECT_NAME}/config.hpp.in
+  include/${PROJECT_NAME}/config.hpp
+  @ONLY
+)
 
 add_subdirectory(src)
 
@@ -28,15 +38,6 @@ install(
   DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}
   PATTERN "*.in" EXCLUDE
   PATTERN "*.h"
-)
-
-option(${PROJECT_NAME}_ENABLE_TESTING
-  "Enable unit tests build of ${PROJECT_NAME}"
-  OFF
-)
-cmake_print_variables(
-  BUILD_TESTING
-  ${PROJECT_NAME}_ENABLE_TESTING
 )
 
 if(BUILD_TESTING OR ${PROJECT_NAME}_ENABLE_TESTING)

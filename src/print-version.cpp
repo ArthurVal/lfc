@@ -1,6 +1,6 @@
 #include <cstdio>
 
-#include "lfc/version.h"
+#include "lfc/config.hpp"
 
 int main() {
   std::puts(lfc_VERSION_STR);

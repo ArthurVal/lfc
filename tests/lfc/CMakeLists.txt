@@ -1,4 +1,5 @@
 add_executable(tests-${PROJECT_NAME}
+  test_config.cpp
   test_linear_model.cpp
 )
 
