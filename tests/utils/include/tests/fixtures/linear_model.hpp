@@ -33,7 +33,7 @@ struct LinearModelFixture : public testing::Test {
     ON_CALL(Const(coeffs_), Accepts(An<T>())).WillByDefault(Return(true));
   }
 
-  void SetUp() override {};
+  void SetUp() override {}
 
   auto MockedModel() { return lfc::TieAsLinearModel(coeffs_, offset_); }
 
@@ -47,7 +47,7 @@ struct LinearModelFixture : public testing::Test {
     return lfc::MakeLinearModel(std::cref(coeffs_));
   }
 
-  void TearDown() override {};
+  void TearDown() override {}
 
   virtual ~LinearModelFixture() override {}
 

@@ -23,13 +23,6 @@ target_compile_features(${PROJECT_NAME}-tests-utils
 )
 
 target_compile_options(${PROJECT_NAME}-tests-utils
-  PRIVATE
-  -Wall
-  -Wextra
-  -Wpedantic
-  -Wshadow
-  -Wdouble-promotion
-  -Wundef
-  -Wconversion
-  # -Werror
+  PUBLIC
+  ${${PROJECT_NAME}_DEFAULT_WARNING_FLAGS}
 )
