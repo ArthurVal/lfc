@@ -1,19 +1,19 @@
 #pragma once
 
-#include <type_traits>
+#include "has_trait.hpp"
 
 namespace lfc::internal {
 
-template <class = void, class... Args>
-struct HasIsValidFreeFunctionImpl : std::false_type {};
+namespace details {
 
 template <class... Args>
-struct HasIsValidFreeFunctionImpl<
-    std::void_t<decltype(IsValid(std::declval<Args>()...))>, Args...>
-    : std::is_convertible<decltype(IsValid(std::declval<Args>()...)), bool> {};
+using IsValidFreeFunction = decltype(IsValid(std::declval<Args>()...));
+
+}
 
 template <class... Args>
-struct HasIsValidFreeFunction : HasIsValidFreeFunctionImpl<void, Args...> {};
+struct HasIsValidFreeFunction
+    : HasTrait<details::IsValidFreeFunction, Args...> {};
 
 template <class... Args>
 constexpr bool HasIsValidFreeFunction_v =
