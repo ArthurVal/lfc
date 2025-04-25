@@ -24,43 +24,44 @@ TEST(LinearModelTest, Make) {
                                LinearModel<int, char>>);
 
   // lvalue ref
-  static_assert(std::is_same_v<decltype(MakeLinearModel(std::declval<int&>(),
+  static_assert(std::is_same_v<decltype(MakeLinearModel(std::declval<int &>(),
                                                         std::declval<char>())),
                                LinearModel<int, char>>);
 
-  static_assert(std::is_same_v<decltype(MakeLinearModel(std::declval<int>(),
-                                                        std::declval<char&>())),
-                               LinearModel<int, char>>);
+  static_assert(
+      std::is_same_v<decltype(MakeLinearModel(std::declval<int>(),
+                                              std::declval<char &>())),
+                     LinearModel<int, char>>);
 
   // const lvalue ref
   static_assert(
-      std::is_same_v<decltype(MakeLinearModel(std::declval<const int&>(),
+      std::is_same_v<decltype(MakeLinearModel(std::declval<const int &>(),
                                               std::declval<char>())),
                      LinearModel<int, char>>);
 
   static_assert(
       std::is_same_v<decltype(MakeLinearModel(std::declval<int>(),
-                                              std::declval<const char&>())),
+                                              std::declval<const char &>())),
                      LinearModel<int, char>>);
 
   // Using reference_wrapper
-  static_assert(
-      std::is_same_v<decltype(MakeLinearModel(std::declval<int>(),
-                                              std::ref(std::declval<char&>()))),
-                     LinearModel<int, char&>>);
+  static_assert(std::is_same_v<decltype(MakeLinearModel(
+                                   std::declval<int>(),
+                                   std::ref(std::declval<char &>()))),
+                               LinearModel<int, char &>>);
 
   static_assert(
-      std::is_same_v<decltype(MakeLinearModel(std::cref(std::declval<int&>()),
+      std::is_same_v<decltype(MakeLinearModel(std::cref(std::declval<int &>()),
                                               std::declval<char>())),
-                     LinearModel<const int&, char>>);
+                     LinearModel<const int &, char>>);
 
   // rvalues
-  static_assert(std::is_same_v<decltype(MakeLinearModel(std::declval<int&&>(),
+  static_assert(std::is_same_v<decltype(MakeLinearModel(std::declval<int &&>(),
                                                         std::declval<char>())),
                                LinearModel<int, char>>);
 
   static_assert(
-      std::is_same_v<decltype(MakeLinearModel(int{}, std::declval<char&&>())),
+      std::is_same_v<decltype(MakeLinearModel(int{}, std::declval<char &&>())),
                      LinearModel<int, char>>);
 
   {
@@ -133,22 +134,23 @@ TEST(LinearModelTest, Make) {
 
 TEST(LinearModelTest, Tie) {
   static_assert(
-      std::is_same_v<decltype(TieAsLinearModel(std::declval<int&>(),
-                                               std::declval<char&>())),
-                     LinearModel<int&, char&>>);
-
-  static_assert(std::is_same_v<decltype(TieAsLinearModel(std::declval<int&>())),
-                               LinearModel<int&, void>>);
+      std::is_same_v<decltype(TieAsLinearModel(std::declval<int &>(),
+                                               std::declval<char &>())),
+                     LinearModel<int &, char &>>);
 
   static_assert(
-      std::is_same_v<decltype(TieAsLinearModel(std::declval<int&>(),
-                                               std::declval<const int&>())),
-                     LinearModel<int&, const int&>>);
+      std::is_same_v<decltype(TieAsLinearModel(std::declval<int &>())),
+                     LinearModel<int &, void>>);
 
   static_assert(
-      std::is_same_v<decltype(TieAsLinearModel(std::declval<const char&>(),
-                                               std::declval<int&>())),
-                     LinearModel<const char&, int&>>);
+      std::is_same_v<decltype(TieAsLinearModel(std::declval<int &>(),
+                                               std::declval<const int &>())),
+                     LinearModel<int &, const int &>>);
+
+  static_assert(
+      std::is_same_v<decltype(TieAsLinearModel(std::declval<const char &>(),
+                                               std::declval<int &>())),
+                     LinearModel<const char &, int &>>);
 
   {
     int k0_ref = 0;
@@ -177,52 +179,53 @@ TEST(LinearModelTest, Tie) {
 TEST(LinearModelTest, Forward) {
   static_assert(
       std::is_same_v<decltype(ForwardAsLinearModel(std::declval<int>())),
-                     LinearModel<int&&, void>>);
+                     LinearModel<int &&, void>>);
 
   static_assert(std::is_same_v<decltype(ForwardAsLinearModel(
                                    std::declval<int>(), std::declval<char>())),
-                               LinearModel<int&&, char&&>>);
+                               LinearModel<int &&, char &&>>);
 
   // lvalue ref
-  static_assert(std::is_same_v<decltype(ForwardAsLinearModel(
-                                   std::declval<int&>(), std::declval<char>())),
-                               LinearModel<int&, char&&>>);
+  static_assert(
+      std::is_same_v<decltype(ForwardAsLinearModel(std::declval<int &>(),
+                                                   std::declval<char>())),
+                     LinearModel<int &, char &&>>);
 
   static_assert(std::is_same_v<decltype(ForwardAsLinearModel(
-                                   int{}, std::declval<char&>())),
-                               LinearModel<int&&, char&>>);
+                                   int{}, std::declval<char &>())),
+                               LinearModel<int &&, char &>>);
 
   // const lvalue ref
   static_assert(
-      std::is_same_v<decltype(ForwardAsLinearModel(std::declval<const int&>(),
+      std::is_same_v<decltype(ForwardAsLinearModel(std::declval<const int &>(),
                                                    std::declval<char>())),
-                     LinearModel<const int&, char&&>>);
+                     LinearModel<const int &, char &&>>);
 
   static_assert(std::is_same_v<decltype(ForwardAsLinearModel(
-                                   int{}, std::declval<const char&>())),
-                               LinearModel<int&&, const char&>>);
+                                   int{}, std::declval<const char &>())),
+                               LinearModel<int &&, const char &>>);
 
   // Using reference_wrapper does nothing here
   static_assert(
       std::is_same_v<decltype(ForwardAsLinearModel(
-                         int{}, std::ref(std::declval<char&>()))),
-                     LinearModel<int&&, std::reference_wrapper<char>&&>>);
+                         int{}, std::ref(std::declval<char &>()))),
+                     LinearModel<int &&, std::reference_wrapper<char> &&>>);
 
-  static_assert(
-      std::is_same_v<decltype(ForwardAsLinearModel(
-                         std::cref(std::declval<const int&>()), char{})),
-                     LinearModel<std::reference_wrapper<const int>&&, char&&>>);
+  static_assert(std::is_same_v<
+                decltype(ForwardAsLinearModel(
+                    std::cref(std::declval<const int &>()), char{})),
+                LinearModel<std::reference_wrapper<const int> &&, char &&>>);
 
   // rvalues
   static_assert(
-      std::is_same_v<decltype(ForwardAsLinearModel(std::declval<int&&>(),
+      std::is_same_v<decltype(ForwardAsLinearModel(std::declval<int &&>(),
                                                    std::declval<char>())),
-                     LinearModel<int&&, char&&>>);
+                     LinearModel<int &&, char &&>>);
 
   static_assert(
       std::is_same_v<decltype(ForwardAsLinearModel(std::declval<int>(),
-                                                   std::declval<char&&>())),
-                     LinearModel<int&&, char&&>>);
+                                                   std::declval<char &&>())),
+                     LinearModel<int &&, char &&>>);
 }
 
 TEST_F(LinearModelMockedTest, IsValid) {
@@ -344,7 +347,7 @@ TEST_F(LinearModelMockedTest, Accepts) {
 
     using model_traits = LinearModelTraits<decltype(model)>;
     static_assert(model_traits::HasAccepts<int>());
-    static_assert(!model_traits::HasAccepts<const char*>());
+    static_assert(!model_traits::HasAccepts<const char *>());
 
     EXPECT_CALL(model.coeffs, Accepts(x))
         .Times(2)
@@ -497,5 +500,5 @@ TEST_F(LinearModelMockedDeathTest, SolvePreconditions) {
       "Accepts\\(m, x\\)");
 }
 
-}  // namespace
-}  // namespace lfc
+} // namespace
+} // namespace lfc

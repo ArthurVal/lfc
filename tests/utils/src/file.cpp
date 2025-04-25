@@ -6,28 +6,26 @@ namespace tests {
 
 namespace {
 
-constexpr auto ToString(PipeDirection dir) noexcept
-    -> std::optional<const char*> {
+constexpr auto
+ToString(PipeDirection dir) noexcept -> std::optional<const char *> {
   switch (dir) {
-    case PipeDirection::kRead:
-      return "r";
-    case PipeDirection::kWrite:
-      return "w";
+  case PipeDirection::kRead:  return "r";
+  case PipeDirection::kWrite: return "w";
   }
 
   return std::nullopt;
 }
 
-}  // namespace
+} // namespace
 
-auto FileOpen(const char* name, char const* mode) noexcept -> FilePtr {
+auto FileOpen(const char *name, char const *mode) noexcept -> FilePtr {
   return {
       std::fopen(name, mode),
       FileSafelyClose,
   };
 }
 
-auto PipeOpen(const char* cmd, PipeDirection dir) noexcept -> PipePtr {
+auto PipeOpen(const char *cmd, PipeDirection dir) noexcept -> PipePtr {
   const auto dir_str = ToString(dir);
   assert(dir_str.has_value());
 
@@ -37,7 +35,7 @@ auto PipeOpen(const char* cmd, PipeDirection dir) noexcept -> PipePtr {
   };
 }
 
-auto FileToString(std::FILE& file,
+auto FileToString(std::FILE &file,
                   const std::size_t chunks) noexcept -> std::string {
   std::string output(chunks, '\0');
 
@@ -54,7 +52,7 @@ auto FileToString(std::FILE& file,
   return output;
 }
 
-auto FileToString(const std::filesystem::path& path) noexcept
+auto FileToString(const std::filesystem::path &path) noexcept
     -> std::optional<std::string> {
   std::optional<std::string> res = std::nullopt;
 
@@ -65,4 +63,4 @@ auto FileToString(const std::filesystem::path& path) noexcept
   return res;
 }
 
-}  // namespace tests
+} // namespace tests

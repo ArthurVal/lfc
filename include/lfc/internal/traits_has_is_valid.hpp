@@ -19,4 +19,4 @@ template <class... Args>
 constexpr bool HasIsValidFreeFunction_v =
     HasIsValidFreeFunction<Args...>::value;
 
-}  // namespace lfc::internal
+} // namespace lfc::internal

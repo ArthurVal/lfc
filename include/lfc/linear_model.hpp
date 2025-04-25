@@ -102,7 +102,7 @@ constexpr bool IsLinearModel_v = LinearModelTraits<T>::value;
  *  \param[in] offset The offset of the linear model
  */
 template <class CoeffsType, class OffsetType>
-constexpr auto MakeLinearModel(CoeffsType&& coeffs, OffsetType&& offset)
+constexpr auto MakeLinearModel(CoeffsType &&coeffs, OffsetType &&offset)
     -> LinearModel<internal::UnwrapRefWrapper_t<std::decay_t<CoeffsType>>,
                    internal::UnwrapRefWrapper_t<std::decay_t<OffsetType>>> {
   return {std::forward<CoeffsType>(coeffs), std::forward<OffsetType>(offset)};
@@ -110,7 +110,7 @@ constexpr auto MakeLinearModel(CoeffsType&& coeffs, OffsetType&& offset)
 
 /// Specialisation disabling offset
 template <class CoeffsType>
-constexpr auto MakeLinearModel(CoeffsType&& coeffs)
+constexpr auto MakeLinearModel(CoeffsType &&coeffs)
     -> LinearModel<internal::UnwrapRefWrapper_t<std::decay_t<CoeffsType>>> {
   return {std::forward<CoeffsType>(coeffs)};
 }
@@ -125,15 +125,15 @@ constexpr auto MakeLinearModel(CoeffsType&& coeffs)
  *  \param[in] offset Reference to the offset of the linear model
  */
 template <class CoeffsType, class OffsetType>
-constexpr auto TieAsLinearModel(CoeffsType& coeffs, OffsetType& offset)
-    -> LinearModel<CoeffsType&, OffsetType&> {
+constexpr auto TieAsLinearModel(CoeffsType &coeffs, OffsetType &offset)
+    -> LinearModel<CoeffsType &, OffsetType &> {
   return {coeffs, offset};
 }
 
 /// Specialisation disabling offset
 template <class CoeffsType>
-constexpr auto TieAsLinearModel(CoeffsType& coeffs)
-    -> LinearModel<CoeffsType&> {
+constexpr auto
+TieAsLinearModel(CoeffsType &coeffs) -> LinearModel<CoeffsType &> {
   return {coeffs};
 }
 
@@ -144,15 +144,15 @@ constexpr auto TieAsLinearModel(CoeffsType& coeffs)
  *  \param[in] offset Forward reference of the offset
  */
 template <class CoeffsType, class OffsetType>
-constexpr auto ForwardAsLinearModel(CoeffsType&& coeffs, OffsetType&& offset)
-    -> LinearModel<CoeffsType&&, OffsetType&&> {
+constexpr auto ForwardAsLinearModel(CoeffsType &&coeffs, OffsetType &&offset)
+    -> LinearModel<CoeffsType &&, OffsetType &&> {
   return {std::forward<CoeffsType>(coeffs), std::forward<OffsetType>(offset)};
 }
 
 /// Specialisation disabling offset
 template <class CoeffsType>
-constexpr auto ForwardAsLinearModel(CoeffsType&& coeffs)
-    -> LinearModel<CoeffsType&&> {
+constexpr auto
+ForwardAsLinearModel(CoeffsType &&coeffs) -> LinearModel<CoeffsType &&> {
   return {std::forward<CoeffsType>(coeffs)};
 }
 
@@ -171,7 +171,7 @@ constexpr auto ForwardAsLinearModel(CoeffsType&& coeffs)
 template <class Model, class...,
           class ModelTraits = LinearModelTraits<std::decay_t<Model>>,
           std::enable_if_t<ModelTraits::value, bool> = true>
-constexpr auto IsValid(Model&& m) -> bool {
+constexpr auto IsValid(Model &&m) -> bool {
   if constexpr (ModelTraits::HasIsValid()) {
     if constexpr (ModelTraits::HasOffset()) {
       return IsValid(std::forward<Model>(m).coeffs,
@@ -198,7 +198,7 @@ constexpr auto IsValid(Model&& m) -> bool {
 template <class Model, class X, class...,
           class ModelTraits = LinearModelTraits<std::decay_t<Model>>,
           std::enable_if_t<ModelTraits::value, bool> = true>
-constexpr auto Accepts(Model&& m, X&& x) -> bool {
+constexpr auto Accepts(Model &&m, X &&x) -> bool {
   if constexpr (ModelTraits::template HasAccepts<X>()) {
     return Accepts(std::forward<Model>(m).coeffs, std::forward<X>(x));
   } else {
@@ -219,7 +219,7 @@ constexpr auto Accepts(Model&& m, X&& x) -> bool {
 template <class Model, class X, class...,
           class ModelTraits = LinearModelTraits<std::decay_t<Model>>,
           std::enable_if_t<ModelTraits::value, bool> = true>
-constexpr auto Solve(Model&& m, X&& x) {
+constexpr auto Solve(Model &&m, X &&x) {
   assert(IsValid(m) &&
          "Model is not valid. Some parameters may be wrongly set internally.");
 
@@ -243,7 +243,7 @@ constexpr auto Solve(Model&& m, X&& x) {
 template <class Model, class X, class...,
           class ModelTraits = LinearModelTraits<std::decay_t<Model>>,
           std::enable_if_t<ModelTraits::value, bool> = true>
-constexpr auto TryToSolve(Model&& model, X&& x)
+constexpr auto TryToSolve(Model &&model, X &&x)
     -> std::optional<decltype(Solve(std::forward<Model>(model),
                                     std::forward<X>(x)))> {
   if (IsValid(model) && Accepts(model, x)) {
@@ -253,4 +253,4 @@ constexpr auto TryToSolve(Model&& model, X&& x)
   }
 }
 
-}  // namespace lfc
+} // namespace lfc

@@ -15,7 +15,7 @@
 namespace lfc {
 namespace {
 
-auto StdoutFrom(const char* cmd) -> std::optional<std::string> {
+auto StdoutFrom(const char *cmd) -> std::optional<std::string> {
   using tests::FileToString;
   using tests::PipeOpen;
 
@@ -35,11 +35,11 @@ TEST(ConfigTest, VersionMatchesWithGit) {
   using testing::Eq;
 
   const auto git_version =
-    StdoutFrom(
+      StdoutFrom(
 #ifdef PROJECT_GIT_LOCATION
           "cd " XSTR(PROJECT_GIT_LOCATION) " && "
 #endif
-          "git describe --abbrev=0 2>&1")
+                                           "git describe --abbrev=0 2>&1")
           .value_or(std::strerror(errno));
 
   EXPECT_THAT(git_version, Eq("v" lfc_VERSION_STR "\n"))
@@ -48,5 +48,5 @@ TEST(ConfigTest, VersionMatchesWithGit) {
          "\n - The last git tag (annotated);";
 }
 
-}  // namespace
-}  // namespace lfc
+} // namespace
+} // namespace lfc

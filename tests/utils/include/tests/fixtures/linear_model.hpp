@@ -53,9 +53,9 @@ struct LinearModelFixture : public testing::Test {
 
   static void TearDownTestSuite() {}
 
- protected:
+protected:
   MockOffset<T> offset_;
-  MockCoeffs<T, MockOffset<T>&> coeffs_;
+  MockCoeffs<T, MockOffset<T> &> coeffs_;
 };
 
-}  // namespace tests
+} // namespace tests

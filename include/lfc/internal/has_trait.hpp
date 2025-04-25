@@ -13,7 +13,7 @@ template <template <class...> class Trait, class... Args>
 struct HasTraitImpl<std::void_t<Trait<Args...>>, Trait, Args...>
     : std::true_type {};
 
-}  // namespace details
+} // namespace details
 
 template <template <class...> class Trait, class... Args>
 struct HasTrait : details::HasTraitImpl<void, Trait, Args...> {};
@@ -21,4 +21,4 @@ struct HasTrait : details::HasTraitImpl<void, Trait, Args...> {};
 template <template <class...> class Trait, class... Args>
 constexpr bool HasTrait_v = HasTrait<Trait, Args...>::value;
 
-}  // namespace lfc::internal
+} // namespace lfc::internal

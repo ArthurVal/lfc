@@ -21,8 +21,9 @@ namespace tests {
  *  @param[in] file The file ptr we wish to close
  */
 inline constexpr auto FileSafelyClose =
-    [](std::FILE* const f) noexcept -> void {
-  if (f) std::fclose(f);
+    [](std::FILE *const f) noexcept -> void {
+  if (f)
+    std::fclose(f);
 };
 
 /// Alias use to represents safe file handler (using RAII) returned by FileOpen
@@ -38,7 +39,7 @@ using FilePtr = std::unique_ptr<std::FILE, decltype(FileSafelyClose)>;
  *                  close the file automatically. Nullptr when the operation
  *                  failed with errno set according to std::fopen().
  */
-auto FileOpen(const char* name, char const* mode) noexcept -> FilePtr;
+auto FileOpen(const char *name, char const *mode) noexcept -> FilePtr;
 
 /**
  *  @brief Safely close a std::FILE opened through popen
@@ -51,8 +52,9 @@ auto FileOpen(const char* name, char const* mode) noexcept -> FilePtr;
  *  @param[in] f The pipe ptr we wish to pclose
  */
 inline constexpr auto PipeSafelyClose =
-    [](std::FILE* const f) noexcept -> void {
-  if (f) pclose(f);
+    [](std::FILE *const f) noexcept -> void {
+  if (f)
+    pclose(f);
 };
 
 /// Alias use to represents safe file handler (using RAII) returned by PipeOpen
@@ -76,7 +78,7 @@ enum class PipeDirection {
  *                  close the pipe automatically. Nullptr when the operation
  *                  failed with errno set according to popen().
  */
-auto PipeOpen(const char* cmd,
+auto PipeOpen(const char *cmd,
               PipeDirection dir = PipeDirection::kRead) noexcept -> PipePtr;
 
 /**
@@ -91,7 +93,7 @@ auto PipeOpen(const char* cmd,
  *
  *  @return std::string The file content store within a string
  */
-auto FileToString(std::FILE& file,
+auto FileToString(std::FILE &file,
                   const std::size_t chunks = 1024) noexcept -> std::string;
 
 /**
@@ -103,7 +105,7 @@ auto FileToString(std::FILE& file,
  *          succeeded. Other std::nullopt, with errno set accordingly (see
  *          fopen())
  */
-auto FileToString(const std::filesystem::path& path) noexcept
+auto FileToString(const std::filesystem::path &path) noexcept
     -> std::optional<std::string>;
 
-}  // namespace tests
+} // namespace tests

@@ -19,4 +19,4 @@ template <class... Args>
 constexpr bool HasAcceptsFreeFunction_v =
     HasAcceptsFreeFunction<Args...>::value;
 
-}  // namespace lfc::internal
+} // namespace lfc::internal

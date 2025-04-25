@@ -13,4 +13,4 @@ struct Overload : Matchers... {
 template <typename... Matchers>
 Overload(Matchers...) -> Overload<Matchers...>;
 
-}  // namespace tests
+} // namespace tests

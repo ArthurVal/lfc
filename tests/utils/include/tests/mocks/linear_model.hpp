@@ -8,20 +8,20 @@ namespace tests {
 template <class OffsetType = void>
 struct MockIsValid {
   MOCK_METHOD(bool, IsValid, (OffsetType), ());
-  friend constexpr auto IsValid(MockIsValid& m, OffsetType o) -> bool {
+  friend constexpr auto IsValid(MockIsValid &m, OffsetType o) -> bool {
     return m.IsValid(o);
   }
 
   MOCK_METHOD(bool, IsValid, (OffsetType), (const));
-  friend constexpr auto IsValid(const MockIsValid& m, OffsetType o) -> bool {
+  friend constexpr auto IsValid(const MockIsValid &m, OffsetType o) -> bool {
     return m.IsValid(o);
   }
 
   MOCK_METHOD(bool, IsValid, (), ());
-  friend constexpr auto IsValid(MockIsValid& m) -> bool { return m.IsValid(); }
+  friend constexpr auto IsValid(MockIsValid &m) -> bool { return m.IsValid(); }
 
   MOCK_METHOD(bool, IsValid, (), (const));
-  friend constexpr auto IsValid(const MockIsValid& m) -> bool {
+  friend constexpr auto IsValid(const MockIsValid &m) -> bool {
     return m.IsValid();
   }
 };
@@ -29,10 +29,10 @@ struct MockIsValid {
 template <>
 struct MockIsValid<void> {
   MOCK_METHOD(bool, IsValid, (), ());
-  friend inline auto IsValid(MockIsValid& m) -> bool { return m.IsValid(); }
+  friend inline auto IsValid(MockIsValid &m) -> bool { return m.IsValid(); }
 
   MOCK_METHOD(bool, IsValid, (), (const));
-  friend inline auto IsValid(const MockIsValid& m) -> bool {
+  friend inline auto IsValid(const MockIsValid &m) -> bool {
     return m.IsValid();
   }
 };
@@ -40,12 +40,12 @@ struct MockIsValid<void> {
 template <class T>
 struct MockAccepts {
   MOCK_METHOD(bool, Accepts, (T), ());
-  friend constexpr auto Accepts(MockAccepts& m, T t) -> bool {
+  friend constexpr auto Accepts(MockAccepts &m, T t) -> bool {
     return m.Accepts(t);
   }
 
   MOCK_METHOD(bool, Accepts, (T), (const));
-  friend constexpr auto Accepts(const MockAccepts& m, T t) -> bool {
+  friend constexpr auto Accepts(const MockAccepts &m, T t) -> bool {
     return m.Accepts(t);
   }
 };
@@ -58,4 +58,4 @@ struct MockCoeffs : public MockIsValid<OffsetType>,
 template <class T>
 struct MockOffset : public MockAddition<T> {};
 
-}  // namespace tests
+} // namespace tests

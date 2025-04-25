@@ -1,6 +1,6 @@
 #pragma once
 
-#include <functional>  // std::reference_wrapper
+#include <functional> // std::reference_wrapper
 
 namespace lfc::internal {
 
@@ -12,10 +12,10 @@ struct UnwrapRefWrapper {
 
 template <class T>
 struct UnwrapRefWrapper<std::reference_wrapper<T>> {
-  using type = T&;
+  using type = T &;
 };
 
 template <class T>
 using UnwrapRefWrapper_t = typename UnwrapRefWrapper<T>::type;
 
-}  // namespace lfc::internal
+} // namespace lfc::internal
