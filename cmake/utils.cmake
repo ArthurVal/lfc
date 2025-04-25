@@ -10,7 +10,7 @@
 #   * disable_in_source_builds([ONLY_LOG <WARNING;STATUS>])
 #   * if_build_type_missing([ASSERTS][DEFAULT_TO <type>])
 # Macros:
-#   * append_default_warnings_to(VAR_NAME)
+#   * append_default_warnings_to(VAR_NAME [WARNINGS_AS_ERRORS])
 # ~~~
 
 # ~~~
@@ -132,6 +132,14 @@ function(utils_if_build_type_missing)
   cmake_print_variables(CMAKE_BUILD_TYPE)
 endfunction()
 
+# ~~~
+# Appends to ${VAR_NAME} all the default usefull warning flags, based on the
+# compiler ID.
+#
+# Arguments:
+#   * WARNINGS_AS_ERRORS (optional - in):
+#     Add the flag that consider all warnings as error.
+# ~~~
 macro(utils_append_default_warnings_to VAR_NAME)
   cmake_parse_arguments(args
     "WARNINGS_AS_ERRORS" # <- Flags

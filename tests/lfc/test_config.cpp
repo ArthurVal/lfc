@@ -3,7 +3,7 @@
 #include <string>
 
 // LFC libs
-#include "lfc/config.hpp"
+#include "lfc/config.h"
 
 // tests utils
 #include "tests/file.hpp"
@@ -42,7 +42,7 @@ TEST(ConfigTest, VersionMatchesWithGit) {
                                            "git describe --abbrev=0 2>&1")
           .value_or(std::strerror(errno));
 
-  EXPECT_THAT(git_version, Eq("v" lfc_VERSION_STR "\n"))
+  EXPECT_THAT(git_version, Eq("v" LFC_VERSION_STR "\n"))
       << "Both version must match:"
          "\n - The version in the main CMakeLists.txt;"
          "\n - The last git tag (annotated);";

@@ -1,12 +1,13 @@
-set(${PROJECT_NAME}_TESTING_GTEST_URL
-  "https://github.com/google/googletest/archive/v1.14.0.zip"
-  CACHE STRING
-  "Points towards the googletest.zip URL that will be fetch, if GTest is not installed on the system."
-)
-cmake_print_variables(${PROJECT_NAME}_TESTING_GTEST_URL)
-
 find_package(GTest)
+
 if(NOT GTest_FOUND)
+  set(${PROJECT_NAME}_TESTING_GTEST_URL
+    "https://github.com/google/googletest/archive/v1.14.0.zip"
+    CACHE STRING
+    "Points towards the googletest.zip URL that will be fetch, if GTest is not installed on the system."
+  )
+  cmake_print_variables(${PROJECT_NAME}_TESTING_GTEST_URL)
+
   message(STATUS
     "Trying to fetch it from URL \"${${PROJECT_NAME}_TESTING_GTEST_URL}\":..."
   )

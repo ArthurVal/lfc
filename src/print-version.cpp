@@ -1,8 +1,8 @@
 #include <cstdio>
 
-#include "lfc/config.hpp"
+#include "lfc/config.h"
 
 int main() {
-  std::puts(lfc_VERSION_STR);
+  std::puts(LFC_VERSION_STR);
   return 0;
 }
