@@ -100,14 +100,13 @@ function(utils_if_build_type_missing)
       set(args_DEFAULT_TO Release)
     else()
       string(TOUPPER ${args_DEFAULT_TO} args_DEFAULT_TO)
-      list(
-        APPEND
-        VALID_DEFAULT_TO
+      list(APPEND VALID_DEFAULT_TO
         NONE
         DEBUG
         RELEASE
         RELWITHDEBINFO
-        MINSIZEREL)
+        MINSIZEREL
+      )
       if(NOT args_DEFAULT_TO IN_LIST VALID_DEFAULT_TO)
         message(FATAL_ERROR
           "Wrong DEFAULT_TO argument ${args_DEFAULT_TO}."
@@ -124,8 +123,8 @@ function(utils_if_build_type_missing)
     set(CMAKE_BUILD_TYPE
       ${args_DEFAULT_TO}
       CACHE STRING
-      "Type of the build. "
-      "One of None, Debug, Release, RelWithDebInfo or MinSizeRel."
+      "Type of the build. One of None, Debug, Release, RelWithDebInfo or MinSizeRel."
+      FORCE
     )
   endif()
 
