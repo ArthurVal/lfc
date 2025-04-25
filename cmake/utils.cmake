@@ -133,7 +133,18 @@ function(utils_if_build_type_missing)
 endfunction()
 
 macro(utils_append_default_warnings_to VAR_NAME)
-  if(CMAKE_CXX_COMPILER_ID STREQUAL "GNU" OR CMAKE_CXX_COMPILER_ID MATCHES "Clang")
+  cmake_parse_arguments(args
+    "WARNINGS_AS_ERRORS" # <- Flags
+    ""                   # <- One value
+    ""                   # <- Multi values
+    ${ARGN}
+  )
+
+  if(CMAKE_CXX_COMPILER_ID MATCHES "^(GNU|.*Clang)$")
+    if (args_WARNINGS_AS_ERRORS)
+      list(APPEND ${VAR_NAME} -Werror)
+    endif()
+
     # Warnings present on all supported versions of GCC and Clang.
     list(APPEND ${VAR_NAME}
       -Wall                # Enables most warnings.
@@ -152,33 +163,34 @@ macro(utils_append_default_warnings_to VAR_NAME)
       -Wundef              # An undefined identifier is evaluated in an #if directive.
       -Wunused             # Enable all -Wunused- warnings.
     )
+
     # Enable additional warnings depending on the compiler and compiler version in use.
     if (CMAKE_CXX_COMPILER_ID STREQUAL "GNU")
       list(APPEND ${VAR_NAME}
-        -Wdisabled-optimization       # GCC’s optimizers are unable to handle the code effectively.
-        -Wlogical-op                  # Warn when a logical operator is always evaluating to true or false.
-        -Wsign-promo                  # Overload resolution chooses a promotion from unsigned to a signed type.
-        -Wredundant-decls             # Something is declared more than once in the same scope.
+        -Wdisabled-optimization   # GCC’s optimizers are unable to handle the code effectively.
+        -Wlogical-op              # Warn when a logical operator is always evaluating to true or false.
+        -Wsign-promo              # Overload resolution chooses a promotion from unsigned to a signed type.
+        -Wredundant-decls         # Something is declared more than once in the same scope.
       )
-      if (NOT CMAKE_CXX_COMPILER_VERSION VERSION_LESS 4.6)
+      if (CMAKE_CXX_COMPILER_VERSION VERSION_GREATER_EQUAL 4.6)
         list(APPEND ${VAR_NAME}
-          -Wdouble-promotion          # Warn about implicit conversions from "float" to "double".
+          -Wdouble-promotion      # Warn about implicit conversions from "float" to "double".
         )
       endif ()
-      if (NOT CMAKE_CXX_COMPILER_VERSION VERSION_LESS 4.8)
+      if (CMAKE_CXX_COMPILER_VERSION VERSION_GREATER_EQUAL 4.8)
         list(APPEND ${VAR_NAME}
-          -Wuseless-cast              # Warn about useless casts.
+          -Wuseless-cast          # Warn about useless casts.
         )
       endif ()
-      if (NOT (CMAKE_CXX_COMPILER_VERSION VERSION_LESS 5))
+      if (CMAKE_CXX_COMPILER_VERSION VERSION_GREATER_EQUAL 5)
         list(APPEND ${VAR_NAME}
-          -Wdate-time                 # Warn when encountering macros that might prevent bit-wise-identical compilations.
-          -Wsuggest-final-methods     # Virtual methods that could be declared final or in an anonymous namespace.
-          -Wsuggest-final-types       # Types with virtual methods that can be declared final or in an anonymous namespace.
-          -Wsuggest-override          # Overriding virtual functions that are not marked with the override keyword.
+          -Wdate-time             # Warn when encountering macros that might prevent bit-wise-identical compilations.
+          -Wsuggest-final-methods # Virtual methods that could be declared final or in an anonymous namespace.
+          -Wsuggest-final-types   # Types with virtual methods that can be declared final or in an anonymous namespace.
+          -Wsuggest-override      # Overriding virtual functions that are not marked with the override keyword.
         )
       endif ()
-      if (NOT (CMAKE_CXX_COMPILER_VERSION VERSION_LESS 6))
+      if (CMAKE_CXX_COMPILER_VERSION VERSION_GREATER_EQUAL 6)
         list(APPEND ${VAR_NAME}
           -Wduplicated-cond           # Warn about duplicated conditions in an if-else-if chain.
           -Wmisleading-indentation    # Warn when indentation does not reflect the block structure.
@@ -186,25 +198,25 @@ macro(utils_append_default_warnings_to VAR_NAME)
           -Wnull-dereference          # Dereferencing a pointer may lead to undefined behavior.
         )
       endif ()
-      if (NOT CMAKE_CXX_COMPILER_VERSION VERSION_LESS 7)
+      if (CMAKE_CXX_COMPILER_VERSION VERSION_GREATER_EQUAL 7)
         list(APPEND ${VAR_NAME}
           -Walloca                    # Warn on any usage of alloca in the code.
           -Wduplicated-branches       # Warn about duplicated branches in if-else statements.
         )
       endif ()
-      if (NOT CMAKE_CXX_COMPILER_VERSION VERSION_LESS 8)
+      if (CMAKE_CXX_COMPILER_VERSION VERSION_GREATER_EQUAL 8)
         list(APPEND ${VAR_NAME}
           -Wextra-semi                # Redundant semicolons after in-class function definitions.
           -Wunsafe-loop-optimizations # The loop cannot be optimized because the compiler cannot assume anything.
         )
       endif ()
-      if (NOT CMAKE_CXX_COMPILER_VERSION VERSION_LESS 10)
+      if (CMAKE_CXX_COMPILER_VERSION VERSION_GREATER_EQUAL 10)
         list(APPEND ${VAR_NAME}
           -Warith-conversion          # Stricter implicit conversion warnings in arithmetic operations.
           -Wredundant-tags            # Redundant class-key and enum-key where it can be eliminated.
         )
       endif ()
-    elseif (CMAKE_CXX_COMPILER_ID MATCHES "Clang")
+    elseif (CMAKE_CXX_COMPILER_ID MATCHES ".*Clang")
       list(APPEND ${VAR_NAME}
         -Wdouble-promotion            # Warn about implicit conversions from "float" to "double".
         -Wnull-dereference            # Dereferencing a pointer may lead to erroneous or undefined behavior.
@@ -212,6 +224,10 @@ macro(utils_append_default_warnings_to VAR_NAME)
       )
     endif ()
   elseif (CMAKE_CXX_COMPILER_ID STREQUAL "MSVC")
+    if (args_WARNINGS_AS_ERRORS)
+      list(APPEND ${VAR_NAME} /WX)
+    endif()
+
     list(APPEND ${VAR_NAME}
       /permissive- # Specify standards conformance mode to the compiler.
       /W4          # Enable level 4 warnings.
@@ -236,14 +252,5 @@ macro(utils_append_default_warnings_to VAR_NAME)
       /w14906      # String literal cast to 'LPWSTR'.
       /w14928      # Illegal copy-initialization; applied more than one user-defined conversion.
     )
-  endif ()
-
-  # Enable warnings as errors.
-  if (WARNINGS_AS_ERRORS)
-    if (CMAKE_CXX_COMPILER_ID STREQUAL "GNU" OR CMAKE_CXX_COMPILER_ID MATCHES "Clang")
-      list(APPEND ${VAR_NAME} -Werror)
-    elseif (CMAKE_CXX_COMPILER_ID STREQUAL "MSVC")
-      list(APPEND ${VAR_NAME} /WX)
-    endif ()
   endif ()
 endmacro()
