@@ -148,7 +148,11 @@ macro(utils_append_default_warnings_to VAR_NAME)
     ${ARGN}
   )
 
-  if(CMAKE_CXX_COMPILER_ID MATCHES "^(GNU|.*Clang)$")
+  set(_IS_CLANG ".*Clang$")
+  set(_IS_GCC "GNU")
+  set(_IS_MSVC "MSVC")
+
+  if(CMAKE_CXX_COMPILER_ID MATCHES "${_IS_GCC}|${_IS_CLANG}")
     if (args_WARNINGS_AS_ERRORS)
       list(APPEND ${VAR_NAME} -Werror)
     endif()
@@ -173,7 +177,7 @@ macro(utils_append_default_warnings_to VAR_NAME)
     )
 
     # Enable additional warnings depending on the compiler and compiler version in use.
-    if (CMAKE_CXX_COMPILER_ID STREQUAL "GNU")
+    if (CMAKE_CXX_COMPILER_ID STREQUAL ${_IS_GCC})
       list(APPEND ${VAR_NAME}
         -Wdisabled-optimization   # GCC’s optimizers are unable to handle the code effectively.
         -Wlogical-op              # Warn when a logical operator is always evaluating to true or false.
@@ -224,14 +228,14 @@ macro(utils_append_default_warnings_to VAR_NAME)
           -Wredundant-tags            # Redundant class-key and enum-key where it can be eliminated.
         )
       endif ()
-    elseif (CMAKE_CXX_COMPILER_ID MATCHES ".*Clang")
+    elseif (CMAKE_CXX_COMPILER_ID MATCHES ${_IS_CLANG})
       list(APPEND ${VAR_NAME}
         -Wdouble-promotion            # Warn about implicit conversions from "float" to "double".
         -Wnull-dereference            # Dereferencing a pointer may lead to erroneous or undefined behavior.
         -Wno-unknown-warning-option   # Ignore unknown warning options.
       )
     endif ()
-  elseif (CMAKE_CXX_COMPILER_ID STREQUAL "MSVC")
+  elseif (CMAKE_CXX_COMPILER_ID STREQUAL ${_IS_MSVC})
     if (args_WARNINGS_AS_ERRORS)
       list(APPEND ${VAR_NAME} /WX)
     endif()
