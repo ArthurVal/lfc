@@ -6,6 +6,9 @@ project(lfc
   LANGUAGES CXX
 )
 
+string(TOLOWER ${PROJECT_NAME} PROJECT_NAME_LOWERCASE)
+string(TOUPPER ${PROJECT_NAME} PROJECT_NAME_UPPERCASE)
+
 ###############################################################################
 #                               GLOBAL includes                               #
 ###############################################################################
@@ -71,8 +74,6 @@ cmake_print_variables(CMAKE_INSTALL_PREFIX)
 ###############################################################################
 #                               CODE GENERAATION                              #
 ###############################################################################
-string(TOUPPER ${PROJECT_NAME} PROJECT_NAME_UPPERCASE)
-
 # Construct config.h using CMake variables
 configure_file(
   include/${PROJECT_NAME}/config.h.in

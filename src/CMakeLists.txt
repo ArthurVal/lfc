@@ -9,4 +9,6 @@ target_link_libraries(${PROJECT_NAME}-print-version
   ${PROJECT_NAME}::${PROJECT_NAME}
 )
 
-# TODO: install
+install(TARGETS ${PROJECT_NAME}-print-version
+  RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR}
+)

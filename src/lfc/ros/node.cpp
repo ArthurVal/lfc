@@ -1,5 +1,10 @@
-#include "lfc/ros/node.hpp"
+#include "lfc/ros/linear_feedback_node.hpp"
 
-using namespace lfc::ros;
+#include "rclcpp/rclcpp.hpp"
 
-LFCNode::LFCNode() : rclcpp::Node("toto") {}
+int main(int argc, char *argv[]) {
+  rclcpp::init(argc, argv);
+  rclcpp::spin(std::make_shared<lfc::ros::LinearFeedbackNode>());
+  rclcpp::shutdown();
+  return 0;
+}
