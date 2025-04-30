@@ -9,23 +9,21 @@
 #include "lfc/linear_model.hpp"
 
 // Internal lfc - PRIVATE
-#include "declare_params.hpp"
+#include "macros.h"
+#include "params/declare_params.hpp"
+#include "params/param_eigen.hpp"
+#include "params/param_raw.hpp"
 
 // Ext libs
 // -- Eigen
 #include "Eigen/Core"
 
 // -- ROS
-#include "rclcpp/exceptions.hpp"
+#include "rclcpp/exceptions/exceptions.hpp"
 #include "rclcpp/logging.hpp"
 #include "rclcpp/qos.hpp"
 
 namespace lfc::ros {
-
-#define STRINGIZE_IMPL(x) #x
-#define STRINGIZE(x) STRINGIZE_IMPL(x)
-
-#define FILE_LINE __FILE__ "@" STRINGIZE(__LINE__)
 
 using gains_t = Eigen::MatrixXd;
 using offset_t = Eigen::VectorXd;
@@ -96,83 +94,16 @@ LinearFeedbackNode::LinearFeedbackNode(const rclcpp::NodeOptions &options)
 
   // -- > Init the gains/offset
   {
-    auto [initial_gains_cols, initial_gains_rows, initial_gains_values,
-          initial_offset_values] =
-        DeclareParams(
-            *this,
-            Param<std::int64_t>("gains/shape/cols")
-                .DefaultTo(0)
-                .Description(
-                    "The current expected size of input state (i.e. number "
-                    "of COLS in the gains's matrix)"),
-            Param<std::int64_t>("gains/shape/rows")
-                .DefaultTo(0)
-                .Description("The current expected size of output (i.e. number "
-                             "of ROWS in the gains's matrix)"),
-            Param<std::vector<double>>("gains/values")
-                .DefaultTo({})
-                .Description("The initial GAINS values (row major) (default "
-                             "gains to IDENTITY if not provided)")
-                .Constraints("When not empty, the size is expected to matches "
-                             "the dimensions specified by 'gains/shape/*'"),
-            Param<std::vector<double>>("offset/values")
-                .DefaultTo({})
-                .Description("The initial OFFSET values (default to ZERO if "
-                             "not provided)")
-                .Constraints("When not empty, the size is expected to matches "
-                             "the dimensions specified by 'gains/shape/rows'"));
+    std::tie(gains, offset) = DeclareParams(
+        *this, ParamMatrix<gains_t>("gains"), ParamVector<offset_t>("offset"));
 
-    if (initial_gains_rows < 0 || initial_gains_cols < 0) {
+    if (gains.rows() != offset.size()) {
       LogAndThrow(
           get_logger(),
           rclcpp::exceptions::InvalidParametersException{
-              MakeStringFrom("'gains/shape/cols' (%ld) and 'gains/shape/rows' "
-                             "(%ld) parameters MUST be positives",
-                             initial_gains_cols, initial_gains_rows)
-                  .value_or(std::string{FILE_LINE} +
-                            ": MakeStringFrom failed: " + std::strerror(errno)),
-          });
-    }
-
-    // Reshaping
-    offset.resize(initial_gains_rows);
-    gains.resize(initial_gains_rows, initial_gains_cols);
-
-    // Update values
-    // --> Offset
-    if (initial_offset_values.empty()) {
-      offset.setZero();
-    } else if (initial_offset_values.size() ==
-               static_cast<std::size_t>(offset.size())) {
-      offset = Eigen::Map<Eigen::VectorXd>(initial_offset_values.data(),
-                                           offset.size());
-    } else {
-      LogAndThrow(
-          get_logger(),
-          rclcpp::exceptions::InvalidParametersException{
-              MakeStringFrom("Size mismatch between 'offset/values' and "
-                             "'gains/shape/rows' (%zu vs %ld)",
-                             initial_offset_values.size(), offset.size())
-                  .value_or(std::string{FILE_LINE} +
-                            ": MakeStringFrom failed: " + std::strerror(errno)),
-          });
-    }
-
-    // --> Gains
-    if (initial_gains_values.empty()) {
-      gains.setIdentity();
-    } else if (initial_gains_values.size() ==
-               static_cast<std::size_t>(gains.size())) {
-      gains = Eigen::Map<Eigen::MatrixXd>(initial_gains_values.data(),
-                                          gains.rows(), gains.cols());
-    } else {
-      LogAndThrow(
-          get_logger(),
-          rclcpp::exceptions::InvalidParametersException{
-              MakeStringFrom(
-                  "Size mismatch between 'gains/values' and "
-                  "['gains/shape/rows' x 'gains/shape/cols'] (%zu vs %ld)",
-                  initial_gains_values.size(), gains.size())
+              MakeStringFrom("Size mismatch between 'offset/size' and "
+                             "'gains/shape/rows' (%ld vs %ld)",
+                             offset.size(), gains.rows())
                   .value_or(std::string{FILE_LINE} +
                             ": MakeStringFrom failed: " + std::strerror(errno)),
           });
@@ -182,8 +113,7 @@ LinearFeedbackNode::LinearFeedbackNode(const rclcpp::NodeOptions &options)
                 "Initial shapes:"
                 "\n - Gains : [%ldx%ld] (ROWSxCOLS)"
                 "\n - Offset: [%ld]",
-                m_impl->gains.rows(), m_impl->gains.cols(),
-                m_impl->offset.size());
+                gains.rows(), gains.cols(), offset.size());
 
     RCLCPP_DEBUG_STREAM(get_logger(), "Initial values:\n - Gains :\n"
                                           << gains << "\n - Offset:\n"
