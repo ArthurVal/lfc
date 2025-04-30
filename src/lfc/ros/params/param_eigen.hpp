@@ -132,7 +132,7 @@ auto DeclareParamInto(rclcpp::Node &node, const ParamVector<T> &param) -> T {
   // Induce the size from values when /size is not set
   if ((T::SizeAtCompileTime == Eigen::Dynamic) &&
       ((vector.size() == 0) && !values.empty())) {
-    vector.resize(vector.size());
+    vector.resize(static_cast<Eigen::Index>(values.size()));
   }
 
   if (values.size() == static_cast<std::size_t>(vector.size())) {
