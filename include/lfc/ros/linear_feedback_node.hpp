@@ -7,6 +7,7 @@
 
 // ROS
 #include "rclcpp/node.hpp"
+#include "sensor_msgs/msg/joint_state.hpp"
 
 namespace lfc::ros {
 
@@ -26,6 +27,8 @@ struct LFC_PUBLIC LinearFeedbackNode : public rclcpp::Node {
 
 private:
   std::unique_ptr<LinearFeedbackNodeImpl> m_impl; /*!< PIMPL */
+  rclcpp::Subscription<sensor_msgs::msg::JointState>::SharedPtr m_input;
+  // rclcpp::Publisher<int> m_output;
 };
 
 } // namespace lfc::ros
