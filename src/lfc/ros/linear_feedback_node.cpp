@@ -43,7 +43,7 @@ auto MakeStringFrom(const char *fmt,
 
   std::optional<std::string> out = std::nullopt;
   std::va_list args_cpy;
-  va_copy(args, args_cpy);
+  va_copy(args_cpy, args);
 
   const auto expected_size = std::vsnprintf(nullptr, 0, fmt, args);
   if (expected_size >= 0) {
