@@ -1,5 +1,4 @@
 #include "lfc/ros/linear_feedback_node.hpp"
-
 #include "rclcpp/rclcpp.hpp"
 
 int main(int argc, char *argv[]) {

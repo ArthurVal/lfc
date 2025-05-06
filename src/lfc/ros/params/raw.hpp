@@ -27,7 +27,6 @@ constexpr bool IsOneOf_v = IsOneOf<T, Others...>::value;
 template <class T>
 struct ParamRaw : public ParamWithName,
                   public ParamWithDescription<ParamRaw<T>> {
-
   static_assert(
       details::IsOneOf_v<T, bool, std::int64_t, double, std::string,
                          std::vector<bool>, std::vector<std::int64_t>,
@@ -49,7 +48,7 @@ struct ParamRaw : public ParamWithName,
     return *this;
   }
 
-private:
+ private:
   value_type m_default_value;
 };
 

@@ -16,13 +16,12 @@ struct ParamWithName {
 
   constexpr auto Name() const -> const std::string & { return m_name; }
 
-private:
+ private:
   std::string m_name;
 };
 
 template <class Derived>
 struct ParamWithDescription {
-
   constexpr ParamWithDescription() = default;
 
   constexpr auto WithDescription(std::string_view descr) -> Derived & {
@@ -40,12 +39,12 @@ struct ParamWithDescription {
     return AsChild();
   }
 
-  constexpr auto
-  Descr() const -> const rcl_interfaces::msg::ParameterDescriptor & {
+  constexpr auto Descr() const
+      -> const rcl_interfaces::msg::ParameterDescriptor & {
     return m_descr;
   }
 
-private:
+ private:
   constexpr auto AsChild() & -> Derived & {
     return static_cast<Derived &>(*this);
   }
@@ -64,6 +63,5 @@ private:
 
   rcl_interfaces::msg::ParameterDescriptor m_descr;
 };
-
 
 } // namespace lfc::ros

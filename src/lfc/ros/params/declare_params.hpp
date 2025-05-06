@@ -1,12 +1,11 @@
 #pragma once
 
-#include "lfc/internal/has_trait.hpp"
-#include "macros.h"
-
 #include <array>
 #include <tuple>
 #include <type_traits>
 
+#include "lfc/internal/has_trait.hpp"
+#include "macros.h"
 #include "rclcpp/node.hpp"
 
 namespace lfc::ros {
@@ -21,7 +20,6 @@ using DeclareParamIntoFreeFunction = decltype(DeclareParamInto(
 
 template <class AnyParam, class... Others>
 auto DeclareParams(rclcpp::Node &node, AnyParam &&param, Others &&...others) {
-
   static_assert(
       (internal::HasTrait_v<details::DeclareParamIntoFreeFunction, AnyParam> &&
        ... &&

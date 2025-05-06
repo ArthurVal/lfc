@@ -22,8 +22,7 @@ namespace tests {
  */
 inline constexpr auto FileSafelyClose =
     [](std::FILE *const f) noexcept -> void {
-  if (f)
-    std::fclose(f);
+  if (f) std::fclose(f);
 };
 
 /// Alias use to represents safe file handler (using RAII) returned by FileOpen
@@ -53,8 +52,7 @@ auto FileOpen(const char *name, char const *mode) noexcept -> FilePtr;
  */
 inline constexpr auto PipeSafelyClose =
     [](std::FILE *const f) noexcept -> void {
-  if (f)
-    pclose(f);
+  if (f) pclose(f);
 };
 
 /// Alias use to represents safe file handler (using RAII) returned by PipeOpen

@@ -15,7 +15,6 @@ namespace lfc::ros {
 struct LFC_PRIVATE LinearFeedbackNodeImpl;
 
 struct LFC_PUBLIC LinearFeedbackNode : public rclcpp::Node {
-
   /// Default construct the node (name: "linear_feedback", ns: "")
   LinearFeedbackNode();
 
@@ -25,7 +24,7 @@ struct LFC_PUBLIC LinearFeedbackNode : public rclcpp::Node {
   /// Destruct the node and free allocated memory
   virtual ~LinearFeedbackNode() noexcept;
 
-private:
+ private:
   std::unique_ptr<LinearFeedbackNodeImpl> m_impl; /*!< PIMPL */
   rclcpp::Subscription<sensor_msgs::msg::JointState>::SharedPtr m_input;
   // rclcpp::Publisher<int> m_output;

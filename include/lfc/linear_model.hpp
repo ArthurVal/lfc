@@ -132,8 +132,8 @@ constexpr auto TieAsLinearModel(CoeffsType &coeffs, OffsetType &offset)
 
 /// Specialisation disabling offset
 template <class CoeffsType>
-constexpr auto
-TieAsLinearModel(CoeffsType &coeffs) -> LinearModel<CoeffsType &> {
+constexpr auto TieAsLinearModel(CoeffsType &coeffs)
+    -> LinearModel<CoeffsType &> {
   return {coeffs};
 }
 
@@ -151,8 +151,8 @@ constexpr auto ForwardAsLinearModel(CoeffsType &&coeffs, OffsetType &&offset)
 
 /// Specialisation disabling offset
 template <class CoeffsType>
-constexpr auto
-ForwardAsLinearModel(CoeffsType &&coeffs) -> LinearModel<CoeffsType &&> {
+constexpr auto ForwardAsLinearModel(CoeffsType &&coeffs)
+    -> LinearModel<CoeffsType &&> {
   return {std::forward<CoeffsType>(coeffs)};
 }
 

@@ -15,8 +15,8 @@ enum class ArgSide {
 
 constexpr auto ToString(ArgSide side) noexcept -> std::string_view {
   switch (side) {
-  case ArgSide::Left:  return "Left";
-  case ArgSide::Right: return "Right";
+    case ArgSide::Left: return "Left";
+    case ArgSide::Right: return "Right";
   }
 
   return "";

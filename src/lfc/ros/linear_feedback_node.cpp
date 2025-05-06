@@ -39,7 +39,6 @@ namespace {
 
 auto MakeStringFrom(const char *fmt,
                     va_list args) noexcept -> std::optional<std::string> {
-
   std::optional<std::string> out = std::nullopt;
   std::va_list args_cpy;
   va_copy(args_cpy, args);
@@ -57,8 +56,8 @@ auto MakeStringFrom(const char *fmt,
   return out;
 }
 
-__attribute__((format(printf, 1, 2))) auto
-MakeStringFrom(const char *fmt, ...) noexcept -> std::optional<std::string> {
+__attribute__((format(printf, 1, 2))) auto MakeStringFrom(
+    const char *fmt, ...) noexcept -> std::optional<std::string> {
   std::va_list args;
   va_start(args, fmt);
   auto out = MakeStringFrom(fmt, args);
@@ -82,7 +81,8 @@ LinearFeedbackNode::LinearFeedbackNode()
 
 LinearFeedbackNode::LinearFeedbackNode(const rclcpp::NodeOptions &options)
     : rclcpp::Node(/* name = */ "linear_feedback", /* ns = */ "", options),
-      m_impl(std::make_unique<LinearFeedbackNodeImpl>()), m_input(nullptr) {
+      m_impl(std::make_unique<LinearFeedbackNodeImpl>()),
+      m_input(nullptr) {
   RCLCPP_DEBUG(get_logger(), "Starting: ...");
 
   auto &gains = m_impl->gains;
@@ -93,8 +93,9 @@ LinearFeedbackNode::LinearFeedbackNode(const rclcpp::NodeOptions &options)
 
   // -- > Init the gains/offset
   {
-    std::tie(gains, offset) = DeclareParams(
-        *this, ParamEigenMatrix<gains_t>("gains"), ParamEigenVector<offset_t>("offset"));
+    std::tie(gains, offset) =
+        DeclareParams(*this, ParamEigenMatrix<gains_t>("gains"),
+                      ParamEigenVector<offset_t>("offset"));
 
     if (gains.rows() != offset.size()) {
       LogAndThrow(

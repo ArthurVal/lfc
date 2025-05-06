@@ -51,7 +51,6 @@ constexpr bool IsMatrixBase_v = IsMatrixBase<T>::value;
 
 template <class T>
 struct ParamEigenMatrix : public ParamWithName {
-
   static_assert(details::IsDenseBase_v<T> && (T::NumDimensions == 2));
 
   constexpr ParamEigenMatrix() = delete;
@@ -99,7 +98,6 @@ auto DeclareParamInto(rclcpp::Node &node,
 
 template <class T>
 struct ParamEigenVector : public ParamWithName {
-
   static_assert(details::IsDenseBase_v<T> && (T::NumDimensions < 2));
 
   constexpr ParamEigenVector() = delete;

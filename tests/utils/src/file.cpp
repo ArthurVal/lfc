@@ -6,11 +6,11 @@ namespace tests {
 
 namespace {
 
-constexpr auto
-ToString(PipeDirection dir) noexcept -> std::optional<const char *> {
+constexpr auto ToString(PipeDirection dir) noexcept
+    -> std::optional<const char *> {
   switch (dir) {
-  case PipeDirection::kRead:  return "r";
-  case PipeDirection::kWrite: return "w";
+    case PipeDirection::kRead: return "r";
+    case PipeDirection::kWrite: return "w";
   }
 
   return std::nullopt;
