@@ -11,8 +11,7 @@
 // Internal lfc - PRIVATE
 #include "macros.h"
 #include "params/declare_params.hpp"
-#include "params/param_eigen.hpp"
-#include "params/param_raw.hpp"
+#include "params/eigen.hpp"
 
 // Ext libs
 // -- Eigen

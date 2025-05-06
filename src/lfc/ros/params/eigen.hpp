@@ -5,11 +5,15 @@
 
 // INTERNAL
 #include "declare_params.hpp"
-#include "param_raw.hpp"
+#include "raw.hpp"
+#include "utils.hpp"
 
 // EXT
 // -- Eigen
 #include "Eigen/Core"
+
+// -- ROS
+#include "rclcpp/node.hpp"
 
 namespace lfc::ros {
 
@@ -46,14 +50,12 @@ constexpr bool IsMatrixBase_v = IsMatrixBase<T>::value;
 } // namespace details
 
 template <class T>
-struct ParamMatrix : public ParamBase<ParamMatrix<T>> {
+struct ParamMatrix : public ParamWithName {
 
   static_assert(details::IsDenseBase_v<T> && (T::NumDimensions == 2));
 
-  using Base = ParamBase<ParamMatrix<T>>;
-
   constexpr ParamMatrix() = delete;
-  constexpr ParamMatrix(std::string_view name) : Base(name) {}
+  constexpr ParamMatrix(std::string_view name) : ParamWithName(name) {}
 };
 
 template <class T>
@@ -95,14 +97,12 @@ auto DeclareParamInto(rclcpp::Node &node, const ParamMatrix<T> &param) -> T {
 }
 
 template <class T>
-struct ParamVector : public ParamBase<ParamVector<T>> {
+struct ParamVector : public ParamWithName {
 
   static_assert(details::IsDenseBase_v<T> && (T::NumDimensions < 2));
 
-  using Base = ParamBase<ParamVector<T>>;
-
   constexpr ParamVector() = delete;
-  constexpr ParamVector(std::string_view name) : Base(name) {}
+  constexpr ParamVector(std::string_view name) : ParamWithName(name) {}
 };
 
 template <class T>

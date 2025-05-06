@@ -1,7 +1,11 @@
 #pragma once
 
 // INTERNAL
-#include "param_base.hpp"
+#include "utils.hpp"
+
+// EXT
+// -- ROS
+#include "rclcpp/node.hpp"
 
 // SYSTEM
 #include <cstdint>
@@ -21,7 +25,8 @@ constexpr bool IsOneOf_v = IsOneOf<T, Others...>::value;
 } // namespace details
 
 template <class T>
-struct ParamRaw : public ParamBase<ParamRaw<T>> {
+struct ParamRaw : public ParamWithName,
+                  public ParamWithDescription<ParamRaw<T>> {
 
   static_assert(
       details::IsOneOf_v<T, bool, std::int64_t, double, std::string,
@@ -29,12 +34,11 @@ struct ParamRaw : public ParamBase<ParamRaw<T>> {
                          std::vector<double>, std::vector<std::string>>);
 
   using value_type = T;
-  using Base = ParamBase<ParamRaw<T>>;
 
   constexpr ParamRaw() = delete;
   constexpr ParamRaw(std::string_view name,
                      value_type default_value = value_type{})
-      : Base(name), m_default_value(std::move(default_value)) {}
+      : ParamWithName(name), m_default_value(std::move(default_value)) {}
 
   constexpr auto DefaultValue() const -> const value_type & {
     return m_default_value;

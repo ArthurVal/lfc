@@ -6,15 +6,24 @@
 
 // EXT
 // -- ROS
-#include "rclcpp/node.hpp"
+#include "rcl_interfaces/msg/parameter_descriptor.hpp"
 
 namespace lfc::ros {
 
-template <class Derived>
-struct ParamBase {
+struct ParamWithName {
+  constexpr ParamWithName() = delete;
+  ParamWithName(std::string_view name) : m_name(name) {}
 
-  constexpr ParamBase() = delete;
-  constexpr ParamBase(std::string_view name) : m_name(name), m_descr() {}
+  constexpr auto Name() const -> const std::string & { return m_name; }
+
+private:
+  std::string m_name;
+};
+
+template <class Derived>
+struct ParamWithDescription {
+
+  constexpr ParamWithDescription() = default;
 
   constexpr auto WithDescription(std::string_view descr) -> Derived & {
     m_descr.description = descr;
@@ -30,8 +39,6 @@ struct ParamBase {
     m_descr.read_only = v;
     return AsChild();
   }
-
-  constexpr auto Name() const -> const std::string & { return m_name; }
 
   constexpr auto
   Descr() const -> const rcl_interfaces::msg::ParameterDescriptor & {
@@ -55,8 +62,8 @@ private:
     return static_cast<const Derived &&>(*this);
   }
 
-  std::string m_name;
   rcl_interfaces::msg::ParameterDescriptor m_descr;
 };
+
 
 } // namespace lfc::ros
