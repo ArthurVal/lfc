@@ -50,16 +50,17 @@ constexpr bool IsMatrixBase_v = IsMatrixBase<T>::value;
 } // namespace details
 
 template <class T>
-struct ParamMatrix : public ParamWithName {
+struct ParamEigenMatrix : public ParamWithName {
 
   static_assert(details::IsDenseBase_v<T> && (T::NumDimensions == 2));
 
-  constexpr ParamMatrix() = delete;
-  constexpr ParamMatrix(std::string_view name) : ParamWithName(name) {}
+  constexpr ParamEigenMatrix() = delete;
+  constexpr ParamEigenMatrix(std::string_view name) : ParamWithName(name) {}
 };
 
 template <class T>
-auto DeclareParamInto(rclcpp::Node &node, const ParamMatrix<T> &param) -> T {
+auto DeclareParamInto(rclcpp::Node &node,
+                      const ParamEigenMatrix<T> &param) -> T {
   T matrix;
 
   auto [rows, cols] = DeclareParams(
@@ -97,16 +98,17 @@ auto DeclareParamInto(rclcpp::Node &node, const ParamMatrix<T> &param) -> T {
 }
 
 template <class T>
-struct ParamVector : public ParamWithName {
+struct ParamEigenVector : public ParamWithName {
 
   static_assert(details::IsDenseBase_v<T> && (T::NumDimensions < 2));
 
-  constexpr ParamVector() = delete;
-  constexpr ParamVector(std::string_view name) : ParamWithName(name) {}
+  constexpr ParamEigenVector() = delete;
+  constexpr ParamEigenVector(std::string_view name) : ParamWithName(name) {}
 };
 
 template <class T>
-auto DeclareParamInto(rclcpp::Node &node, const ParamVector<T> &param) -> T {
+auto DeclareParamInto(rclcpp::Node &node,
+                      const ParamEigenVector<T> &param) -> T {
   T vector;
 
   auto size = DeclareParams(

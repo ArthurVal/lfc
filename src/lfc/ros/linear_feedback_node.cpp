@@ -94,7 +94,7 @@ LinearFeedbackNode::LinearFeedbackNode(const rclcpp::NodeOptions &options)
   // -- > Init the gains/offset
   {
     std::tie(gains, offset) = DeclareParams(
-        *this, ParamMatrix<gains_t>("gains"), ParamVector<offset_t>("offset"));
+        *this, ParamEigenMatrix<gains_t>("gains"), ParamEigenVector<offset_t>("offset"));
 
     if (gains.rows() != offset.size()) {
       LogAndThrow(
